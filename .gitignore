@@ -1,3 +1,11 @@
+# compiled executable
+test
+test_debug
+
+# tree files
+*.nwk
+*.gz
+
 # Prerequisites
 *.d
 
