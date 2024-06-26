@@ -9,9 +9,20 @@
 #include <cstring>
 #include <ctype.h>
 #include <iostream>
+#include <vector>
+
+// constants
+#define NODE_T std::uint32_t // define node type, which is a fixed-width unsigned integer
 
 // compact_tree class
 class compact_tree {
+    private:
+        /**
+         * compact_tree member variables
+         */
+        std::vector<NODE_T> parent;                // `parent[i]` is the parent of node `i`
+        std::vector<std::vector<NODE_T>> children; // `children[i]` is a `vector` containing the children of node `i`
+
     public:
         /**
          * Load a tree from a file
