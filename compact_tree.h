@@ -6,6 +6,7 @@
 #define COMPACT_TREE_H
 
 // include statements
+#include <cstring>
 #include <ctype.h>
 #include <iostream>
 
@@ -26,6 +27,15 @@ compact_tree::compact_tree(const char* const & fn, char* const & schema) {
     for(uint8_t i = 0; schema[i]; ++i) {
         schema[i] = tolower(schema[i]);
     }
-    std::cout << "Load " << schema << " file: " << fn << std::endl; // TODO
+
+    // load Newick tree
+    if(strcmp(schema, "newick") == 0) {
+        std::cout << "Load " << schema << " file: " << fn << std::endl; // TODO
+    }
+
+    // invalid schema
+    else {
+        std::cerr << "ERROR: Invalid schema: " << schema << std::endl; exit(1);
+    }
 }
 #endif
