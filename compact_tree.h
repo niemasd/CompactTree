@@ -35,13 +35,25 @@
 class compact_tree {
     private:
         /**
-         * compact_tree member variables
+         * compact_tree important member variables
          */
         std::vector<CT_NODE_T> parent;                            // `parent[i]` is the parent of node `i`
         std::vector<std::vector<CT_NODE_T>> children;             // `children[i]` is a `vector` containing the children of node `i`
         std::vector<CT_LENGTH_T> length;                          // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
         std::vector<const char*> label;                           // `label[i]` is the label of node `i`
         std::unordered_map<const char*, CT_NODE_T> label_to_node; // `label_to_node[label]` is the node labeled by `label`
+
+        /**
+         * compact_tree helper member variables
+         */
+        CT_NODE_T tmp_node; // temporary holding variable for nodes (e.g. new child); value should only be used immediately after assigning
+
+        /**
+         * Helper function to create a new node and add it as a child to a given node
+         * @param parent_node The parent node
+         * @return The newly-created child node
+         */
+        CT_NODE_T create_child(const CT_NODE_T parent_node);
 
     public:
         /**
@@ -65,6 +77,17 @@ class compact_tree {
          */
         CT_NODE_T get_node(const char* const label);
 };
+
+// helper function to create new node and add as child to parent
+CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
+    tmp_node = parent.size();                        // `tmp_node` = new child node
+    parent.emplace_back(parent_node);                // `parent[tmp_node]` = parent of new node (which is `parent_node`)
+    children.emplace_back(std::vector<CT_NODE_T>()); // `children[tmp_node]` = children of new node (currently empty)
+    length.emplace_back((CT_LENGTH_T)0);             // `length[tmp_node]` = incident edge length of new node (currently 0)
+    label.emplace_back(nullptr);                     // `label[tmp_node]` = label of new node (currently nothing)
+    children[parent_node].emplace_back(tmp_node);    // add `tmp_node` as a new child of `parent_node`
+    return tmp_node;
+}
 
 // compact_tree constructor
 compact_tree::compact_tree(const char* const fn, char* const schema) {
@@ -92,7 +115,6 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
         // read Newick tree byte-by-byte
         size_t bytes_read; char* p; size_t i;
         CT_NODE_T curr_node = 0; // start at root node (0)
-        CT_NODE_T tmp_node; // temporary holding variable for nodes (e.g. new child); value should only be used immediately after assigning
         while((bytes_read = read(fd, buf, IO_BUFFER_SIZE))) {
             // handle cases where we don't use these read values
             if(bytes_read == (size_t)(-1)) {
@@ -109,13 +131,7 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
 
                     // go to new child
                     case '(':
-                        tmp_node = parent.size();                        // `tmp_node` = new child node
-                        parent.emplace_back(curr_node);                  // `parent[tmp_node]` = parent of new node (which is `curr_node`)
-                        children.emplace_back(std::vector<CT_NODE_T>()); // `children[tmp_node]` = children of new node (currently empty)
-                        length.emplace_back((CT_LENGTH_T)0);             // `length[tmp_node]` = incident edge length of new node (currently 0)
-                        label.emplace_back(nullptr);                     // `label[tmp_node]` = label of new node (currently nothing)
-                        children[curr_node].emplace_back(tmp_node);      // add `tmp_node` as a new child of `curr_node`
-                        curr_node = tmp_node;                            // move `curr_node` "pointer" to new child node
+                        curr_node = create_child(curr_node);
                         break;
 
                     // go to parent
@@ -125,7 +141,7 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
 
                     // go to new sibling
                     case ',':
-                        // TODO
+                        curr_node = create_child(parent[curr_node]);
                         break;
 
                     // edge length
