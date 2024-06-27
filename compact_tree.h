@@ -47,7 +47,8 @@ class compact_tree {
         /**
          * compact_tree helper member variables
          */
-        CT_NODE_T tmp_node; // temporary holding variable for nodes (e.g. new child); value should only be used immediately after assigning
+        CT_NODE_T tmp_node;      // temporary holding variable for nodes (e.g. new child); value should only be used immediately after assigning
+        size_t num_leaves = 0;   // cache the total number of leaves (avoid recalculation)
 
         /**
          * Helper function to create a new node and add it as a child to a given node
@@ -55,6 +56,11 @@ class compact_tree {
          * @return The newly-created child node
          */
         CT_NODE_T create_child(const CT_NODE_T parent_node);
+
+        /**
+         * Helper function to calculate the number of leaves and internal nodes
+         */
+        void calc_num_leaves_internal();
 
     public:
         /**
@@ -65,10 +71,22 @@ class compact_tree {
         compact_tree(const char* const fn, char* const schema);
 
         /**
-         * Get the number of nodes in the tree
+         * Get the total number of nodes in the tree using a O(1) lookup
          * @return The number of nodes in the tree
          */
-        size_t num_nodes() const;
+        size_t get_num_nodes() const;
+
+        /**
+         * Get the total number of leaves in the tree. First time is O(n) scan; subsequent times are O(1) lookup
+         * @return The number of leaves in the tree
+         */
+        size_t get_num_leaves();
+
+        /**
+         * Get the total number of internal nodes in the tree. First time is O(n) scan; subsequent times are O(1) lookup
+         * @return The number of internal nodes in the tree
+         */
+        size_t get_num_internal();
 
         /**
          * Get the label of a node
@@ -95,8 +113,30 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
     return tmp_node;
 }
 
+// calculate number of leaves/internal
+void compact_tree::calc_num_leaves_internal() {
+    for(const std::vector<CT_NODE_T> & curr_children : children) {
+        if(curr_children.size() == 0) {
+            num_leaves += 1;
+        }
+    }
+}
+
+// get number of leaves
+size_t compact_tree::get_num_leaves() {
+    if(num_leaves == 0) {
+        calc_num_leaves_internal();
+    }
+    return num_leaves;
+}
+
+// get number of internal nodes
+size_t compact_tree::get_num_internal() {
+    return get_num_nodes() - get_num_leaves();
+}
+
 // get number of nodes
-size_t compact_tree::num_nodes() const {
+size_t compact_tree::get_num_nodes() const {
     return parent.size();
 }
 

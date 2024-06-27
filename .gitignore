@@ -1,5 +1,6 @@
 # compiled executable
 load_tree
+print_stats
 
 # tree files
 *.nwk
