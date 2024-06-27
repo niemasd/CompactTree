@@ -151,11 +151,14 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
             }
 
             // iterate over the characters in the buffer
+            std::cout << "BUFFER: " << buf << std::endl; // TODO DELETE
             for(p = buf, i = 0; i < bytes_read; ++p, ++i) {
+                std::cout << "CURRENT LETTER: " << *p << std::endl; // TODO DELETE
                 // currently parsing a comment (ignore for now)
                 if(parse_comment) {
                     // reached end of comment
                     if((*p) == ']') {
+                        std::cout << "end comment" << std::endl; // TODO DELETE
                         parse_comment = false;
                     }
                 }
@@ -171,15 +174,18 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                             parse_length = false;
                             --i; // need to re-read this character
                             // TODO length[curr_node] = PARSE str_buf AS CT_LENGTH_T
+                            std::cout << "end length" << std::endl; // TODO DELETE
                             break;
 
                         // edge comment (ignore for now)
                         case '[':
+                            std::cout << "start comment" << std::endl; // TODO DELETE
                             parse_comment = true;
                             break;
 
                         // character within edge length
                         default:
+                            std::cout << "continue length" << std::endl; // TODO DELETE
                             str_buf[str_buf_i++] = (*p);
                             break;
                     }
@@ -192,7 +198,9 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                         case ':':
                         case ',':
                         case ')':
+                            --i; // need to re-read this character
                         case '\'':
+                            std::cout << "end label" << std::endl; // TODO DELETE
                             str_buf[str_buf_i] = (char)0;
                             parse_label = false;
                             label[curr_node] = str_buf;
@@ -206,11 +214,13 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
 
                         // node comment (ignore for now)
                         case '[':
+                            std::cout << "start comment" << std::endl; // TODO DELETE
                             parse_comment = true;
                             break;
 
                         // character within node label
                         default:
+                            std::cout << "continue label" << std::endl; // TODO DELETE
                             str_buf[str_buf_i++] = (*p);
                             break;
                     }
@@ -221,41 +231,44 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                     switch(*p) {
                         // end of Newick string
                         case ';':
+                            std::cout << "END OF NEWICK" << std::endl; // TODO DELETE
                             return;
 
                         // go to new child
                         case '(':
+                            std::cout << "create and go to child" << std::endl; // TODO DELETE
                             curr_node = create_child(curr_node);
                             break;
 
                         // go to parent
                         case ')':
+                            std::cout << "go to parent" << std::endl; // TODO DELETE
                             curr_node = parent[curr_node];
                             break;
 
                         // go to new sibling
                         case ',':
+                            std::cout << "create and go to sibling" << std::endl; // TODO DELETE
                             curr_node = create_child(parent[curr_node]);
                             break;
 
                         // node comment (ignore for now)
                         case '[':
+                            std::cout << "start comment" << std::endl; // TODO DELETE
                             parse_comment = true;
                             break;
 
                         // edge length
                         case ':':
+                            std::cout << "start length" << std::endl; // TODO DELETE
                             parse_length = true; str_buf_i = 0;
                             break;
 
                         // about to parse a node label
                         case '\'':
+                            std::cout << "start label" << std::endl; // TODO DELETE
                             parse_label = true; str_buf_i = 0;
-                            break;
-
-                        // node label
                         default:
-                            parse_label = true; str_buf_i = 0;
                             --i; // need to re-read this character (it's part of the label)
                             break;
                     }
