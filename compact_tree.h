@@ -73,6 +73,12 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
         schema[i] = tolower(schema[i]);
     }
 
+    // set up root node (initially empty/blank)
+    parent.emplace_back((CT_NODE_T)(-1));
+    children.emplace_back(std::vector<CT_NODE_T>());
+    length.emplace_back((CT_LENGTH_T)0);
+    label.emplace_back(nullptr);
+
     // load Newick tree
     if(strcmp(schema, "newick") == 0) {
         // set up file input: https://stackoverflow.com/a/17925143/2134991
@@ -83,25 +89,33 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
         posix_fadvise(fd, 0, 0, 1);  // FDADVICE_SEQUENTIAL
         char buf[IO_BUFFER_SIZE + 1];
 
-        // read input byte-by-byte
+        // read Newick tree byte-by-byte
         size_t bytes_read; char* p; size_t i;
+        CT_NODE_T curr_node = 0; // start at root node (0)
+        CT_NODE_T tmp_node; // temporary holding variable for nodes (e.g. new child); value should only be used immediately after assigning
         while((bytes_read = read(fd, buf, IO_BUFFER_SIZE))) {
+            // handle cases where we don't use these read values
             if(bytes_read == (size_t)(-1)) {
                 return; // read failed
             }
             if(!bytes_read) {
-                break;
+                break; // done reading
             }
             for(p = buf, i = 0; i < bytes_read; ++p, ++i) {
                 switch(*p) {
                     // end of Newick string
                     case ';':
-                        // TODO
                         return;
 
                     // go to new child
                     case '(':
-                        // TODO
+                        tmp_node = parent.size();                        // `tmp_node` = new child node
+                        parent.emplace_back(curr_node);                  // `parent[tmp_node]` = parent of new node (which is `curr_node`)
+                        children.emplace_back(std::vector<CT_NODE_T>()); // `children[tmp_node]` = children of new node (currently empty)
+                        length.emplace_back((CT_LENGTH_T)0);             // `length[tmp_node]` = incident edge length of new node (currently 0)
+                        label.emplace_back(nullptr);                     // `label[tmp_node]` = label of new node (currently nothing)
+                        children[curr_node].emplace_back(tmp_node);      // add `tmp_node` as a new child of `curr_node`
+                        curr_node = tmp_node;                            // move `curr_node` "pointer" to new child node
                         break;
 
                     // go to parent
