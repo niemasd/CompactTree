@@ -8,3 +8,4 @@ Just download [`compact_tree.h`](compact_tree.h) into your C++ code base, add `#
 To demonstrate CompactTree's use, we provide a series of simple example programs:
 
 * **[`load_tree.cpp`](load_tree.cpp)** - Just load a tree
+* **[`print_stats.cpp`](print_stats.cpp)** - Print statistics about a tree
