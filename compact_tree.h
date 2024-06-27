@@ -43,7 +43,6 @@ class compact_tree {
         std::vector<std::vector<CT_NODE_T>> children;             // `children[i]` is a `vector` containing the children of node `i`
         std::vector<CT_LENGTH_T> length;                          // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
         std::vector<std::string> label;                           // `label[i]` is the label of node `i`
-        std::unordered_map<std::string, CT_NODE_T> label_to_node; // `label_to_node[label]` is the node labeled by `label`
 
         /**
          * compact_tree helper member variables
@@ -73,11 +72,10 @@ class compact_tree {
         const std::string & get_label(CT_NODE_T node);
 
         /**
-         * Get the label associated with a node
-         * @param label The label
-         * @return The node labeled by `label`, or -1 if not found
+         * Get all labels (return by reference)
+         * @return A `vector<string>` where the `i`-th value is the label of node `i`
          */
-        CT_NODE_T get_node(const std::string & label);
+        const std::vector<std::string> & get_labels();
 };
 
 // helper function to create new node and add as child to parent
@@ -96,13 +94,9 @@ const std::string & compact_tree::get_label(CT_NODE_T node) {
     return label[node];
 }
 
-// get node from label
-CT_NODE_T compact_tree::get_node(const std::string & label) {
-    auto tmp = label_to_node.find(label);
-    if(tmp == label_to_node.end()) {
-        return (CT_NODE_T)(-1);
-    }
-    return tmp->second;
+// get all labels
+const std::vector<std::string> & compact_tree::get_labels() {
+    return label;
 }
 
 // compact_tree constructor (putting it last because it's super long)
@@ -111,10 +105,6 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
     for(size_t i = 0; schema[i]; ++i) {
         schema[i] = tolower(schema[i]);
     }
-
-    // helper variables
-    std::unordered_set<std::string> labels_to_delete; // store labels to delete from `label_to_node` (e.g. duplicates)
-    std::unordered_map<std::string, CT_NODE_T>::const_iterator tmp_l2n_it; // helper iterator for looking up in `label_to_node`
 
     // set up root node (initially empty/blank)
     parent.emplace_back((CT_NODE_T)(-1));
@@ -151,14 +141,11 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
             }
 
             // iterate over the characters in the buffer
-            std::cout << "BUFFER: " << buf << std::endl; // TODO DELETE
             for(i = 0; i < bytes_read; ++i) {
-                std::cout << "CURRENT LETTER (i=" << i << ",tot=" << bytes_read << "): " << buf[i] << std::endl; // TODO DELETE
                 // currently parsing a comment (ignore for now)
                 if(parse_comment) {
                     // reached end of comment
                     if(buf[i] == ']') {
-                        std::cout << "end comment" << std::endl; // TODO DELETE
                         parse_comment = false;
                     }
                 }
@@ -174,18 +161,15 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                             parse_length = false;
                             --i; // need to re-read this character
                             // TODO length[curr_node] = PARSE str_buf AS CT_LENGTH_T
-                            std::cout << "end length: " << str_buf << std::endl; // TODO DELETE
                             break;
 
                         // edge comment (ignore for now)
                         case '[':
-                            std::cout << "start comment" << std::endl; // TODO DELETE
                             parse_comment = true;
                             break;
 
                         // character within edge length
                         default:
-                            std::cout << "continue length" << std::endl; // TODO DELETE
                             str_buf[str_buf_i++] = buf[i];
                             break;
                     }
@@ -201,26 +185,17 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                             --i; // need to re-read this character
                         case '\'':
                             str_buf[str_buf_i] = (char)0;
-                            std::cout << "end label: " << str_buf << std::endl; // TODO DELETE
                             parse_label = false;
                             label[curr_node] = str_buf;
-                            tmp_l2n_it = label_to_node.find(label[curr_node]);
-                            if(tmp_l2n_it == label_to_node.end()) {
-                                label_to_node.emplace(label[curr_node], curr_node);
-                            } else {
-                                labels_to_delete.emplace(label[curr_node]);
-                            }
                             break;
 
                         // node comment (ignore for now)
                         case '[':
-                            std::cout << "start comment" << std::endl; // TODO DELETE
                             parse_comment = true;
                             break;
 
                         // character within node label
                         default:
-                            std::cout << "continue label" << std::endl; // TODO DELETE
                             str_buf[str_buf_i++] = buf[i];
                             break;
                     }
@@ -235,47 +210,39 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
 
                         // end of Newick string
                         case ';':
-                            std::cout << "END OF NEWICK" << std::endl; // TODO DELETE
                             return;
 
                         // go to new child
                         case '(':
-                            std::cout << "create and go to child" << std::endl; // TODO DELETE
                             curr_node = create_child(curr_node);
                             break;
 
                         // go to parent
                         case ')':
-                            std::cout << "go to parent" << std::endl; // TODO DELETE
                             curr_node = parent[curr_node];
                             break;
 
                         // go to new sibling
                         case ',':
-                            std::cout << "create and go to sibling" << std::endl; // TODO DELETE
                             curr_node = create_child(parent[curr_node]);
                             break;
 
                         // node comment (ignore for now)
                         case '[':
-                            std::cout << "start comment" << std::endl; // TODO DELETE
                             parse_comment = true;
                             break;
 
                         // edge length
                         case ':':
-                            std::cout << "start length" << std::endl; // TODO DELETE
                             parse_length = true; str_buf_i = 0;
                             break;
 
                         // about to parse a node label in quotes ('')
                         case '\'':
-                            std::cout << "start label and ignore" << std::endl; // TODO DELETE
                             parse_label = true; str_buf_i = 0;
 
                         // about to start a node label without quotes
                         default:
-                            std::cout << "start label and go back" << std::endl; // TODO DELETE
                             parse_label = true; str_buf_i = 0;
                             --i; // need to re-read this character (it's part of the label)
                             break;
@@ -288,16 +255,6 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
     // invalid schema
     else {
         std::cerr << "ERROR: Invalid schema: " << schema << std::endl; exit(1);
-    }
-
-    // delete duplicate labels from `label_to_node`
-    for(const std::string & curr_label : labels_to_delete) {
-        label_to_node.erase(curr_label);
-    }
-
-    // TODO DELETE DEBUGGING
-    for(auto & pair : label_to_node) {
-        std::cout << pair.first << std::endl;
     }
 }
 #endif
