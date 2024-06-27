@@ -120,7 +120,7 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
 
                     // go to parent
                     case ')':
-                        // TODO
+                        curr_node = parent[curr_node];
                         break;
 
                     // go to new sibling
