@@ -39,10 +39,10 @@ class compact_tree {
         /**
          * compact_tree important member variables
          */
-        std::vector<CT_NODE_T> parent;                            // `parent[i]` is the parent of node `i`
-        std::vector<std::vector<CT_NODE_T>> children;             // `children[i]` is a `vector` containing the children of node `i`
-        std::vector<CT_LENGTH_T> length;                          // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
-        std::vector<std::string> label;                           // `label[i]` is the label of node `i`
+        std::vector<CT_NODE_T> parent;                // `parent[i]` is the parent of node `i`
+        std::vector<std::vector<CT_NODE_T>> children; // `children[i]` is a `vector` containing the children of node `i`
+        std::vector<CT_LENGTH_T> length;              // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
+        std::vector<std::string> label;               // `label[i]` is the label of node `i`
 
         /**
          * compact_tree helper member variables
@@ -65,17 +65,23 @@ class compact_tree {
         compact_tree(const char* const fn, char* const schema);
 
         /**
+         * Get the number of nodes in the tree
+         * @return The number of nodes in the tree
+         */
+        size_t num_nodes() const;
+
+        /**
          * Get the label of a node
          * @param node The node to get the label of
          * @return The label of `node`
          */
-        const std::string & get_label(CT_NODE_T node);
+        const std::string & get_label(CT_NODE_T node) const;
 
         /**
          * Get all labels (return by reference)
          * @return A `vector<string>` where the `i`-th value is the label of node `i`
          */
-        const std::vector<std::string> & get_labels();
+        const std::vector<std::string> & get_labels() const;
 };
 
 // helper function to create new node and add as child to parent
@@ -89,13 +95,18 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
     return tmp_node;
 }
 
+// get number of nodes
+size_t compact_tree::num_nodes() const {
+    return parent.size();
+}
+
 // get label from node
-const std::string & compact_tree::get_label(CT_NODE_T node) {
+const std::string & compact_tree::get_label(CT_NODE_T node) const {
     return label[node];
 }
 
 // get all labels
-const std::vector<std::string> & compact_tree::get_labels() {
+const std::vector<std::string> & compact_tree::get_labels() const {
     return label;
 }
 
