@@ -1,6 +1,5 @@
 # compiled executable
-test
-test_debug
+load_tree
 
 # tree files
 *.nwk
