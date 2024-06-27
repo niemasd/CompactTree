@@ -1,6 +1,5 @@
 /**
- * Simple test program for CompactTree
- * Niema Moshiri 2024
+ * Load a tree
  */
 #include <iostream>
 #include "compact_tree.h"
