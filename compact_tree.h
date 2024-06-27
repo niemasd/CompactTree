@@ -9,8 +9,10 @@
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::cerr, std::cout, std::endl
+#include <string>        // std::string
 #include <unistd.h>      // read()
 #include <unordered_map> // std::unordered_map
+#include <unordered_set> // std::unordered_set
 #include <vector>        // std::vector
 
 // general constants
@@ -40,8 +42,8 @@ class compact_tree {
         std::vector<CT_NODE_T> parent;                            // `parent[i]` is the parent of node `i`
         std::vector<std::vector<CT_NODE_T>> children;             // `children[i]` is a `vector` containing the children of node `i`
         std::vector<CT_LENGTH_T> length;                          // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
-        std::vector<const char*> label;                           // `label[i]` is the label of node `i`
-        std::unordered_map<const char*, CT_NODE_T> label_to_node; // `label_to_node[label]` is the node labeled by `label`
+        std::vector<std::string> label;                           // `label[i]` is the label of node `i`
+        std::unordered_map<std::string, CT_NODE_T> label_to_node; // `label_to_node[label]` is the node labeled by `label`
 
         /**
          * compact_tree helper member variables
@@ -68,14 +70,14 @@ class compact_tree {
          * @param node The node to get the label of
          * @return The label of `node`
          */
-        const char* const get_label(CT_NODE_T node);
+        const std::string & get_label(CT_NODE_T node);
 
         /**
          * Get the label associated with a node
          * @param label The label
          * @return The node labeled by `label`, or -1 if not found
          */
-        CT_NODE_T get_node(const char* const label);
+        CT_NODE_T get_node(const std::string & label);
 };
 
 // helper function to create new node and add as child to parent
@@ -84,23 +86,41 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
     parent.emplace_back(parent_node);                // `parent[tmp_node]` = parent of new node (which is `parent_node`)
     children.emplace_back(std::vector<CT_NODE_T>()); // `children[tmp_node]` = children of new node (currently empty)
     length.emplace_back((CT_LENGTH_T)0);             // `length[tmp_node]` = incident edge length of new node (currently 0)
-    label.emplace_back(nullptr);                     // `label[tmp_node]` = label of new node (currently nothing)
+    label.emplace_back("");                          // `label[tmp_node]` = label of new node (currently nothing)
     children[parent_node].emplace_back(tmp_node);    // add `tmp_node` as a new child of `parent_node`
     return tmp_node;
 }
 
-// compact_tree constructor
+// get label from node
+const std::string & compact_tree::get_label(CT_NODE_T node) {
+    return label[node];
+}
+
+// get node from label
+CT_NODE_T compact_tree::get_node(const std::string & label) {
+    auto tmp = label_to_node.find(label);
+    if(tmp == label_to_node.end()) {
+        return (CT_NODE_T)(-1);
+    }
+    return tmp->second;
+}
+
+// compact_tree constructor (putting it last because it's super long)
 compact_tree::compact_tree(const char* const fn, char* const schema) {
     // convert schema to lowercase
     for(size_t i = 0; schema[i]; ++i) {
         schema[i] = tolower(schema[i]);
     }
 
+    // helper variables
+    std::unordered_set<std::string> labels_to_delete; // store labels to delete from `label_to_node` (e.g. duplicates)
+    std::unordered_map<std::string, CT_NODE_T>::const_iterator tmp_l2n_it; // helper iterator for looking up in `label_to_node`
+
     // set up root node (initially empty/blank)
     parent.emplace_back((CT_NODE_T)(-1));
     children.emplace_back(std::vector<CT_NODE_T>());
     length.emplace_back((CT_LENGTH_T)0);
-    label.emplace_back(nullptr);
+    label.emplace_back("");
 
     // load Newick tree
     if(strcmp(schema, "newick") == 0) {
@@ -109,50 +129,136 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
         if(fd == -1) {
             return; // error opening file
         }
-        posix_fadvise(fd, 0, 0, 1);  // FDADVICE_SEQUENTIAL
-        char buf[IO_BUFFER_SIZE + 1];
+        posix_fadvise(fd, 0, 0, 1);                   // FDADVICE_SEQUENTIAL
+        char buf[IO_BUFFER_SIZE + 1];                 // buffer for reading
+        size_t bytes_read; char* p; size_t i;         // variables to help with reading
+        char str_buf[256] = {}; size_t str_buf_i = 0; // helper string buffer
+
+        // set up initial Newick parsing state
+        CT_NODE_T curr_node = 0;    // start at root node (0)
+        bool parse_length = false;  // parsing a length right now?
+        bool parse_label = false;   // parsing a label right now?
+        bool parse_comment = false; // parsing a comment [...] right now?
 
         // read Newick tree byte-by-byte
-        size_t bytes_read; char* p; size_t i;
-        CT_NODE_T curr_node = 0; // start at root node (0)
         while((bytes_read = read(fd, buf, IO_BUFFER_SIZE))) {
-            // handle cases where we don't use these read values
+            // handle cases where we don't use the values in the buffer
             if(bytes_read == (size_t)(-1)) {
                 return; // read failed
             }
             if(!bytes_read) {
                 break; // done reading
             }
+
+            // iterate over the characters in the buffer
             for(p = buf, i = 0; i < bytes_read; ++p, ++i) {
-                switch(*p) {
-                    // end of Newick string
-                    case ';':
-                        return;
+                // currently parsing a comment (ignore for now)
+                if(parse_comment) {
+                    // reached end of comment
+                    if((*p) == ']') {
+                        parse_comment = false;
+                    }
+                }
 
-                    // go to new child
-                    case '(':
-                        curr_node = create_child(curr_node);
-                        break;
+                // currently parsing an edge length
+                else if(parse_length) {
+                    switch(*p) {
+                        // finished parsing edge length
+                        case ',':
+                        case ')':
+                        case ';':
+                            str_buf[str_buf_i] = (char)0;
+                            parse_length = false;
+                            --i; // need to re-read this character
+                            // TODO length[curr_node] = PARSE str_buf AS CT_LENGTH_T
+                            break;
 
-                    // go to parent
-                    case ')':
-                        curr_node = parent[curr_node];
-                        break;
+                        // edge comment (ignore for now)
+                        case '[':
+                            parse_comment = true;
+                            break;
 
-                    // go to new sibling
-                    case ',':
-                        curr_node = create_child(parent[curr_node]);
-                        break;
+                        // character within edge length
+                        default:
+                            str_buf[str_buf_i++] = (*p);
+                            break;
+                    }
+                }
 
-                    // edge length
-                    case ':':
-                        // TODO
-                        break;
+                // currently parsing a node label
+                else if(parse_label) {
+                    switch(*p) {
+                        // finished parsing node label
+                        case ':':
+                        case ',':
+                        case ')':
+                        case '\'':
+                            str_buf[str_buf_i] = (char)0;
+                            parse_label = false;
+                            label[curr_node] = str_buf;
+                            tmp_l2n_it = label_to_node.find(label[curr_node]);
+                            if(tmp_l2n_it == label_to_node.end()) {
+                                label_to_node.emplace(label[curr_node], curr_node);
+                            } else {
+                                labels_to_delete.emplace(label[curr_node]);
+                            }
+                            break;
 
-                    // node label
-                    default:
-                        // TODO
-                        break; // unnecessary (can delete once I fill in this switch case
+                        // node comment (ignore for now)
+                        case '[':
+                            parse_comment = true;
+                            break;
+
+                        // character within node label
+                        default:
+                            str_buf[str_buf_i++] = (*p);
+                            break;
+                    }
+                }
+
+                // all other symbols
+                else {
+                    switch(*p) {
+                        // end of Newick string
+                        case ';':
+                            return;
+
+                        // go to new child
+                        case '(':
+                            curr_node = create_child(curr_node);
+                            break;
+
+                        // go to parent
+                        case ')':
+                            curr_node = parent[curr_node];
+                            break;
+
+                        // go to new sibling
+                        case ',':
+                            curr_node = create_child(parent[curr_node]);
+                            break;
+
+                        // node comment (ignore for now)
+                        case '[':
+                            parse_comment = true;
+                            break;
+
+                        // edge length
+                        case ':':
+                            parse_length = true; str_buf_i = 0;
+                            break;
+
+                        // about to parse a node label
+                        case '\'':
+                            parse_label = true; str_buf_i = 0;
+                            break;
+
+                        // node label
+                        default:
+                            parse_label = true; str_buf_i = 0;
+                            --i; // need to re-read this character (it's part of the label)
+                            break;
+                    }
                 }
             }
         }
@@ -162,19 +268,15 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
     else {
         std::cerr << "ERROR: Invalid schema: " << schema << std::endl; exit(1);
     }
-}
 
-// get label from node
-const char* const compact_tree::get_label(CT_NODE_T node) {
-    return label[node];
-}
-
-// get node from label
-CT_NODE_T compact_tree::get_node(const char* const label) {
-    auto tmp = label_to_node.find(label);
-    if(tmp == label_to_node.end()) {
-        return (CT_NODE_T)(-1);
+    // delete duplicate labels from `label_to_node`
+    for(const std::string & curr_label : labels_to_delete) {
+        label_to_node.erase(curr_label);
     }
-    return tmp->second;
+
+    // TODO DELETE DEBUGGING
+    for(auto & pair : label_to_node) {
+        std::cout << pair.first << std::endl;
+    }
 }
 #endif
