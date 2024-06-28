@@ -14,5 +14,11 @@ int main(int argc, char** argv) {
     std::cout << "Number of Nodes: " << tree.get_num_nodes() << std::endl;
     std::cout << "- Leaves: " << tree.get_num_leaves() << std::endl;
     std::cout << "- Internal: " << tree.get_num_internal() << std::endl;
+    std::cout << "Total Branch Length: " << tree.calc_total_bl() << std::endl;
+    std::cout << "- Leaves: " << tree.calc_total_bl(false, true) << std::endl;
+    std::cout << "- Internal: " << tree.calc_total_bl(true, false) << std::endl;
+    std::cout << "Average Branch Length: " << tree.calc_avg_bl() << std::endl;
+    std::cout << "- Leaves: " << tree.calc_avg_bl(false, true) << std::endl;
+    std::cout << "- Internal: " << tree.calc_avg_bl(true, false) << std::endl;
     return 0;
 }

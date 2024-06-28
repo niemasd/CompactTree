@@ -210,6 +210,36 @@ class compact_tree {
          * @return The MRCA of the nodes in `nodes`
          */
         CT_NODE_T find_mrca(const std::unordered_set<CT_NODE_T> & nodes);
+
+        /**
+         * Calculate the total branch length of this tree
+         * @param include_internal `true` to include internal nodes, otherwise `false`
+         * @param include_leaves `true` to include leaves, otherwise `false`
+         * @return The total branch length of this tree
+         */
+        CT_LENGTH_T calc_total_bl(bool include_internal = true, bool include_leaves = true) {
+            if(!(include_internal || include_leaves)) { return (CT_LENGTH_T)0; }
+            CT_LENGTH_T tot = 0; CT_NODE_T num_nodes = get_num_nodes();
+            for(CT_NODE_T node = 0; node < num_nodes; ++node) {
+                if(children[node].size() == 0) { if(include_leaves) { tot += get_edge_length(node); } }
+                else { if(include_internal) { tot += get_edge_length(node); } }
+            }
+            return tot;
+        }
+
+        /**
+         * Calculate the average branch length of this tree
+         * @param include_internal `true` to include internal nodes, otherwise `false`
+         * @param include_leaves `true` to include leaves, otherwise `false`
+         * @return The average branch length of this tree
+         */
+        CT_LENGTH_T calc_avg_bl(bool include_internal = true, bool include_leaves = true) {
+            if(!(include_internal || include_leaves)) { return (CT_LENGTH_T)0; }
+            CT_LENGTH_T tot = calc_total_bl(include_internal, include_leaves); CT_NODE_T den = 0;
+            if(include_internal) { den += get_num_internal(); }
+            if(include_leaves) { den += get_num_leaves(); }
+            return tot / den;
+        }
 };
 
 // find the MRCA of nodes
