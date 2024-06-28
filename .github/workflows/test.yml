@@ -13,4 +13,4 @@ jobs:
     - name: Run tests
       run: |
         make && \
-        for f in * ; do test -x "$f" && ! test -d "$f" && "./$f" "example/example.nwk" "newick" > "$f.log" ; done
+        for f in $(cat Makefile | grep '^EXES=' | cut -d'=' -f2) ; do "./$f" "example/example.nwk" "newick" > "$f.log" ; done
