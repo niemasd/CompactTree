@@ -18,6 +18,7 @@
 // general constants
 #define VERSION "0.0.1"
 #define IO_BUFFER_SIZE 16384
+const std::string EMPTY_STRING = "";
 
 // define node type, which is a fixed-width unsigned integer (default is 32-bit)
 #if defined CT_NODE_64
@@ -41,8 +42,10 @@ class compact_tree {
          */
         std::vector<CT_NODE_T> parent;                // `parent[i]` is the parent of node `i`
         std::vector<std::vector<CT_NODE_T>> children; // `children[i]` is a `vector` containing the children of node `i`
-        std::vector<CT_LENGTH_T> length;              // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
+        bool has_labels;                              // Whether or not we're going to save labels (for quick look-up)
         std::vector<std::string> label;               // `label[i]` is the label of node `i`
+        bool has_lengths;                             // Whether or not we're going to save lengths (for quick look-up)
+        std::vector<CT_LENGTH_T> length;              // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
 
         /**
          * compact_tree helper member variables
@@ -67,8 +70,10 @@ class compact_tree {
          * Load a tree from a file
          * @param fn The filename of the tree to load
          * @param schema The schema of `fn`
+         * @param store_labels `true` to store node labels, otherwise `false` (saves memory)
+         * @param store_lengths `true` to store edge lengths, otherwise `false` (saves memory)
          */
-        compact_tree(const char* const fn, char* const schema);
+        compact_tree(const char* const fn, char* const schema, bool store_labels = true, bool store_lengths = true);
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup
@@ -113,14 +118,14 @@ class compact_tree {
          * @param node The node to get the incident edge length of
          * @return The incident edge length of `node`
          */
-        CT_LENGTH_T get_edge_length(CT_NODE_T node) const { return length[node]; }
+        CT_LENGTH_T get_edge_length(CT_NODE_T node) const { return has_lengths ? length[node] : (CT_LENGTH_T)0; }
 
         /**
          * Get the label of a node
          * @param node The node to get the label of
          * @return The label of `node`
          */
-        const std::string & get_label(CT_NODE_T node) const { return label[node]; }
+        const std::string & get_label(CT_NODE_T node) const { return has_labels ? label[node] : EMPTY_STRING; }
 
         /**
          * Get all labels (return by reference)
@@ -170,14 +175,18 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
     tmp_node = parent.size();                        // `tmp_node` = new child node
     parent.emplace_back(parent_node);                // `parent[tmp_node]` = parent of new node (which is `parent_node`)
     children.emplace_back(std::vector<CT_NODE_T>()); // `children[tmp_node]` = children of new node (currently empty)
-    length.emplace_back((CT_LENGTH_T)0);             // `length[tmp_node]` = incident edge length of new node (currently 0)
-    label.emplace_back("");                          // `label[tmp_node]` = label of new node (currently nothing)
+    if(has_lengths) {
+        length.emplace_back((CT_LENGTH_T)0);         // `length[tmp_node]` = incident edge length of new node (currently 0)
+    }
+    if(has_labels) {
+        label.emplace_back("");                      // `label[tmp_node]` = label of new node (currently nothing)
+    }
     children[parent_node].emplace_back(tmp_node);    // add `tmp_node` as a new child of `parent_node`
     return tmp_node;
 }
 
 // compact_tree constructor (putting it last because it's super long)
-compact_tree::compact_tree(const char* const fn, char* const schema) {
+compact_tree::compact_tree(const char* const fn, char* const schema, bool store_labels, bool store_lengths) : has_labels(store_labels), has_lengths(store_lengths) {
     // convert schema to lowercase
     for(size_t i = 0; schema[i]; ++i) {
         schema[i] = tolower(schema[i]);
@@ -186,8 +195,12 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
     // set up root node (initially empty/blank)
     parent.emplace_back((CT_NODE_T)(-1));
     children.emplace_back(std::vector<CT_NODE_T>());
-    length.emplace_back((CT_LENGTH_T)0);
-    label.emplace_back("");
+    if(has_lengths) {
+        length.emplace_back((CT_LENGTH_T)0);
+    }
+    if(has_labels) {
+        label.emplace_back("");
+    }
 
     // load Newick tree
     if(strcmp(schema, "newick") == 0) {
@@ -237,7 +250,9 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                             str_buf[str_buf_i] = (char)0;
                             parse_length = false;
                             --i; // need to re-read this character
-                            length[curr_node] = atof(str_buf);
+                            if(has_lengths) {
+                                length[curr_node] = atof(str_buf);
+                            }
                             break;
 
                         // edge comment (ignore for now)
@@ -263,7 +278,9 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                         case '\'':
                             str_buf[str_buf_i] = (char)0;
                             parse_label = false;
-                            label[curr_node] = str_buf;
+                            if(has_labels) {
+                                label[curr_node] = str_buf;
+                            }
                             break;
 
                         // node comment (ignore for now)
