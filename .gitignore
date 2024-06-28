@@ -6,9 +6,12 @@ print_num_descendants
 print_root_dists
 print_stats
 
-# tree files
-*.nwk
+# input/output files
 *.gz
+*.log
+*.nwk
+*.tre
+*.txt
 
 # Prerequisites
 *.d

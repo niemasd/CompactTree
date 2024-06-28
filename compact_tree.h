@@ -71,12 +71,12 @@ class compact_tree {
     public:
         /**
          * Load a tree from a file
-         * @param fn The filename of the tree to load
-         * @param schema The schema of `fn`
-         * @param store_labels `true` to store node labels, otherwise `false` (saves memory)
-         * @param store_lengths `true` to store edge lengths, otherwise `false` (saves memory)
+         * @param input The filename or Newick string of the tree to load
+         * @param is_fn `true` if `input` is a filename (default), otherwise `false` if `input` is a Newick string
+         * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
+         * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
          */
-        compact_tree(const char* const fn, char* const schema, bool store_labels = true, bool store_lengths = true);
+        compact_tree(const char* input, bool is_fn = true, bool store_labels = true, bool store_lengths = true);
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup
@@ -234,12 +234,7 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
 }
 
 // compact_tree constructor (putting it last because it's super long)
-compact_tree::compact_tree(const char* const fn, char* const schema, bool store_labels, bool store_lengths) : has_labels(store_labels), has_lengths(store_lengths) {
-    // convert schema to lowercase
-    for(size_t i = 0; schema[i]; ++i) {
-        schema[i] = tolower(schema[i]);
-    }
-
+compact_tree::compact_tree(const char* input, bool is_fn, bool store_labels, bool store_lengths) : has_labels(store_labels), has_lengths(store_lengths) {
     // set up root node (initially empty/blank)
     parent.emplace_back(NULL_NODE);
     children.emplace_back(std::vector<CT_NODE_T>());
@@ -250,153 +245,145 @@ compact_tree::compact_tree(const char* const fn, char* const schema, bool store_
         label.emplace_back("");
     }
 
-    // load Newick tree
-    if(strcmp(schema, "newick") == 0) {
-        // set up file input: https://stackoverflow.com/a/17925143/2134991
-        int fd = open(fn, O_RDONLY);
-        if(fd == -1) {
-            return; // error opening file
-        }
-        posix_fadvise(fd, 0, 0, 1);                   // FDADVICE_SEQUENTIAL
-        char buf[IO_BUFFER_SIZE + 1];                 // buffer for reading
-        size_t bytes_read; size_t i;                  // variables to help with reading
-        char str_buf[256] = {}; size_t str_buf_i = 0; // helper string buffer
-
-        // set up initial Newick parsing state
-        CT_NODE_T curr_node = 0;    // start at root node (0)
-        bool parse_length = false;  // parsing a length right now?
-        bool parse_label = false;   // parsing a label right now?
-        bool parse_comment = false; // parsing a comment [...] right now?
-
-        // read Newick tree byte-by-byte
-        while((bytes_read = read(fd, buf, IO_BUFFER_SIZE))) {
-            // handle cases where we don't use the values in the buffer
-            if(bytes_read == (size_t)(-1)) {
-                return; // read failed
-            }
-            if(!bytes_read) {
-                break; // done reading
-            }
-
-            // iterate over the characters in the buffer
-            for(i = 0; i < bytes_read; ++i) {
-                // currently parsing a comment (ignore for now)
-                if(parse_comment) {
-                    // reached end of comment
-                    if(buf[i] == ']') {
-                        parse_comment = false;
-                    }
-                }
-
-                // currently parsing an edge length
-                else if(parse_length) {
-                    switch(buf[i]) {
-                        // finished parsing edge length
-                        case ',':
-                        case ')':
-                        case ';':
-                            str_buf[str_buf_i] = (char)0;
-                            parse_length = false;
-                            --i; // need to re-read this character
-                            if(has_lengths) {
-                                length[curr_node] = atof(str_buf);
-                            }
-                            break;
-
-                        // edge comment (ignore for now)
-                        case '[':
-                            parse_comment = true;
-                            break;
-
-                        // character within edge length
-                        default:
-                            str_buf[str_buf_i++] = buf[i];
-                            break;
-                    }
-                }
-
-                // currently parsing a node label
-                else if(parse_label) {
-                    switch(buf[i]) {
-                        // finished parsing node label
-                        case ':':
-                        case ',':
-                        case ')':
-                            --i; // need to re-read this character
-                        case '\'':
-                            str_buf[str_buf_i] = (char)0;
-                            parse_label = false;
-                            if(has_labels) {
-                                label[curr_node] = str_buf;
-                            }
-                            break;
-
-                        // node comment (ignore for now)
-                        case '[':
-                            parse_comment = true;
-                            break;
-
-                        // character within node label
-                        default:
-                            str_buf[str_buf_i++] = buf[i];
-                            break;
-                    }
-                }
-
-                // all other symbols
-                else {
-                    switch(buf[i]) {
-                        // ignore spaces outside of labels
-                        case ' ':
-                            break;
-
-                        // end of Newick string
-                        case ';':
-                            return;
-
-                        // go to new child
-                        case '(':
-                            curr_node = create_child(curr_node);
-                            break;
-
-                        // go to parent
-                        case ')':
-                            curr_node = parent[curr_node];
-                            break;
-
-                        // go to new sibling
-                        case ',':
-                            curr_node = create_child(parent[curr_node]);
-                            break;
-
-                        // node comment (ignore for now)
-                        case '[':
-                            parse_comment = true;
-                            break;
-
-                        // edge length
-                        case ':':
-                            parse_length = true; str_buf_i = 0;
-                            break;
-
-                        // about to parse a node label in quotes ('')
-                        case '\'':
-                            parse_label = true; str_buf_i = 0;
-
-                        // about to start a node label without quotes
-                        default:
-                            parse_label = true; str_buf_i = 0;
-                            --i; // need to re-read this character (it's part of the label)
-                            break;
-                    }
-                }
-            }
-        }
+    // set up file input: https://stackoverflow.com/a/17925143/2134991
+    int fd = open(input, O_RDONLY);
+    if(fd == -1) {
+        return; // error opening file
     }
+    posix_fadvise(fd, 0, 0, 1);                   // FDADVICE_SEQUENTIAL
+    char buf[IO_BUFFER_SIZE + 1];                 // buffer for reading
+    size_t bytes_read; size_t i;                  // variables to help with reading
+    char str_buf[256] = {}; size_t str_buf_i = 0; // helper string buffer
 
-    // invalid schema
-    else {
-        std::cerr << "ERROR: Invalid schema: " << schema << std::endl; exit(1);
+    // set up initial Newick parsing state
+    CT_NODE_T curr_node = 0;    // start at root node (0)
+    bool parse_length = false;  // parsing a length right now?
+    bool parse_label = false;   // parsing a label right now?
+    bool parse_comment = false; // parsing a comment [...] right now?
+
+    // read Newick tree byte-by-byte
+    while((bytes_read = read(fd, buf, IO_BUFFER_SIZE))) {
+        // handle cases where we don't use the values in the buffer
+        if(bytes_read == (size_t)(-1)) {
+            return; // read failed
+        }
+        if(!bytes_read) {
+            break; // done reading
+        }
+
+        // iterate over the characters in the buffer
+        for(i = 0; i < bytes_read; ++i) {
+            // currently parsing a comment (ignore for now)
+            if(parse_comment) {
+                // reached end of comment
+                if(buf[i] == ']') {
+                    parse_comment = false;
+                }
+            }
+
+            // currently parsing an edge length
+            else if(parse_length) {
+                switch(buf[i]) {
+                    // finished parsing edge length
+                    case ',':
+                    case ')':
+                    case ';':
+                        str_buf[str_buf_i] = (char)0;
+                        parse_length = false;
+                        --i; // need to re-read this character
+                        if(has_lengths) {
+                            length[curr_node] = atof(str_buf);
+                        }
+                        break;
+
+                    // edge comment (ignore for now)
+                    case '[':
+                        parse_comment = true;
+                        break;
+
+                    // character within edge length
+                    default:
+                        str_buf[str_buf_i++] = buf[i];
+                        break;
+                }
+            }
+
+            // currently parsing a node label
+            else if(parse_label) {
+                switch(buf[i]) {
+                    // finished parsing node label
+                    case ':':
+                    case ',':
+                    case ')':
+                        --i; // need to re-read this character
+                    case '\'':
+                        str_buf[str_buf_i] = (char)0;
+                        parse_label = false;
+                        if(has_labels) {
+                            label[curr_node] = str_buf;
+                        }
+                        break;
+
+                    // node comment (ignore for now)
+                    case '[':
+                        parse_comment = true;
+                        break;
+
+                    // character within node label
+                    default:
+                        str_buf[str_buf_i++] = buf[i];
+                        break;
+                }
+            }
+
+            // all other symbols
+            else {
+                switch(buf[i]) {
+                    // ignore spaces outside of labels
+                    case ' ':
+                        break;
+
+                    // end of Newick string
+                    case ';':
+                        return;
+
+                    // go to new child
+                    case '(':
+                        curr_node = create_child(curr_node);
+                        break;
+
+                    // go to parent
+                    case ')':
+                        curr_node = parent[curr_node];
+                        break;
+
+                    // go to new sibling
+                    case ',':
+                        curr_node = create_child(parent[curr_node]);
+                        break;
+
+                    // node comment (ignore for now)
+                    case '[':
+                        parse_comment = true;
+                        break;
+
+                    // edge length
+                    case ':':
+                        parse_length = true; str_buf_i = 0;
+                        break;
+
+                    // about to parse a node label in quotes ('')
+                    case '\'':
+                        parse_label = true; str_buf_i = 0;
+
+                    // about to start a node label without quotes
+                    default:
+                        parse_label = true; str_buf_i = 0;
+                        --i; // need to re-read this character (it's part of the label)
+                        break;
+                }
+            }
+        }
     }
 }
 #endif
