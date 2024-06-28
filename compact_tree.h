@@ -378,6 +378,9 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
 
                     // go to new child
                     case '(':
+                        if(curr_node == NULL_NODE) {
+                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+                        }
                         curr_node = create_child(curr_node);
                         break;
 
@@ -388,6 +391,9 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
 
                     // go to new sibling
                     case ',':
+                        if((curr_node == NULL_NODE) || (parent[curr_node] == NULL_NODE)) {
+                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+                        }
                         curr_node = create_child(parent[curr_node]);
                         break;
 
