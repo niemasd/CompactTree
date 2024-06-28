@@ -11,6 +11,7 @@
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::cerr, std::cout, std::endl
 #include <queue>         // std::queue
+#include <stdexcept>     // std::invalid_argument
 #include <string>        // std::string
 #include <unistd.h>      // read()
 #include <unordered_map> // std::unordered_map
@@ -76,7 +77,7 @@ class compact_tree {
          * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
          * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
          */
-        compact_tree(const char* input, bool is_fn = true, bool store_labels = true, bool store_lengths = true);
+        compact_tree(char* input, bool is_fn = true, bool store_labels = true, bool store_lengths = true);
 
         /**
          * Load a tree from a Newick file or std::string
@@ -85,7 +86,7 @@ class compact_tree {
          * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
          * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
          */
-        compact_tree(const std::string & input, bool is_fn = true, bool store_labels = true, bool store_lengths = true) : compact_tree(input.c_str(), is_fn, store_labels, store_lengths) {}
+        //explicit compact_tree(const std::string & input, bool is_fn = true, bool store_labels = true, bool store_lengths = true) : compact_tree(input.c_str(), is_fn, store_labels, store_lengths) {}
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup
@@ -243,7 +244,25 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
 }
 
 // compact_tree constructor (putting it last because it's super long)
-compact_tree::compact_tree(const char* input, bool is_fn, bool store_labels, bool store_lengths) : has_labels(store_labels), has_lengths(store_lengths) {
+compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool store_lengths) : has_labels(store_labels), has_lengths(store_lengths) {
+    // set up file input: https://stackoverflow.com/a/17925143/2134991
+    int fd = -1;
+    size_t bytes_read; size_t i;                  // variables to help with reading
+    char read_buf[IO_BUFFER_SIZE + 1];            // buffer for reading
+    char str_buf[256] = {}; size_t str_buf_i = 0; // helper string buffer
+    char* buf;                                    // either read_buf (if reading from file) or the C string (if reading Newick string)
+    if(is_fn) {
+        open(input, O_RDONLY);
+        if(fd == -1) {
+            return;                               // error opening file
+        }
+        posix_fadvise(fd, 0, 0, 1);               // FDADVICE_SEQUENTIAL
+        buf = read_buf;
+    } else {
+        bytes_read = strlen(input);
+        buf = input;
+    }
+
     // set up root node (initially empty/blank)
     parent.emplace_back(NULL_NODE);
     children.emplace_back(std::vector<CT_NODE_T>());
@@ -254,16 +273,6 @@ compact_tree::compact_tree(const char* input, bool is_fn, bool store_labels, boo
         label.emplace_back("");
     }
 
-    // set up file input: https://stackoverflow.com/a/17925143/2134991
-    int fd = open(input, O_RDONLY);
-    if(fd == -1) {
-        return; // error opening file
-    }
-    posix_fadvise(fd, 0, 0, 1);                   // FDADVICE_SEQUENTIAL
-    char buf[IO_BUFFER_SIZE + 1];                 // buffer for reading
-    size_t bytes_read; size_t i;                  // variables to help with reading
-    char str_buf[256] = {}; size_t str_buf_i = 0; // helper string buffer
-
     // set up initial Newick parsing state
     CT_NODE_T curr_node = 0;    // start at root node (0)
     bool parse_length = false;  // parsing a length right now?
@@ -271,7 +280,12 @@ compact_tree::compact_tree(const char* input, bool is_fn, bool store_labels, boo
     bool parse_comment = false; // parsing a comment [...] right now?
 
     // read Newick tree byte-by-byte
-    while((bytes_read = read(fd, buf, IO_BUFFER_SIZE))) {
+    while(true) {
+        if(is_fn) {
+            bytes_read = read(fd, buf, IO_BUFFER_SIZE);
+        } else {
+            buf = input;
+        }
         // handle cases where we don't use the values in the buffer
         if(bytes_read == (size_t)(-1)) {
             return; // read failed
