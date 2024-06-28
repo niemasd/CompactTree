@@ -217,9 +217,9 @@ class compact_tree {
          * @param include_leaves `true` to include leaves, otherwise `false`
          * @return The total branch length of this tree
          */
-        CT_LENGTH_T calc_total_bl(bool include_internal = true, bool include_leaves = true) {
-            if(!(include_internal || include_leaves)) { return (CT_LENGTH_T)0; }
-            CT_LENGTH_T tot = 0; CT_NODE_T num_nodes = get_num_nodes();
+        double calc_total_bl(bool include_internal = true, bool include_leaves = true) {
+            if(!(include_internal || include_leaves)) { return 0.; }
+            double tot = 0; CT_NODE_T num_nodes = get_num_nodes();
             for(CT_NODE_T node = 0; node < num_nodes; ++node) {
                 if(children[node].size() == 0) { if(include_leaves) { tot += get_edge_length(node); } }
                 else { if(include_internal) { tot += get_edge_length(node); } }
@@ -233,12 +233,26 @@ class compact_tree {
          * @param include_leaves `true` to include leaves, otherwise `false`
          * @return The average branch length of this tree
          */
-        CT_LENGTH_T calc_avg_bl(bool include_internal = true, bool include_leaves = true) {
-            if(!(include_internal || include_leaves)) { return (CT_LENGTH_T)0; }
-            CT_LENGTH_T tot = calc_total_bl(include_internal, include_leaves); CT_NODE_T den = 0;
+        double calc_avg_bl(bool include_internal = true, bool include_leaves = true) {
+            if(!(include_internal || include_leaves)) { return 0.; }
+            double tot = calc_total_bl(include_internal, include_leaves); CT_NODE_T den = 0;
             if(include_internal) { den += get_num_internal(); }
             if(include_leaves) { den += get_num_leaves(); }
             return tot / den;
+        }
+
+        /**
+         * Calculate the (weighted) distance between two nodes
+         * @param `u` The first node
+         * @param `v` The second node
+         * @return The (weighted) distance between `u` and `v`
+         */
+        double calc_dist(CT_NODE_T u, CT_NODE_T v) {
+            if(u == v) { return 0.; } if(u == parent[v]) { return get_edge_length(v); } if(v == parent[u]) { return get_edge_length(u); }
+            std::unordered_map<CT_NODE_T, double> u_dists; std::unordered_map<CT_NODE_T, double> v_dists; CT_NODE_T c = u; CT_NODE_T p = parent[c]; std::unordered_map<CT_NODE_T, double>::iterator it;
+            while(p != NULL_NODE) { u_dists[p] = u_dists[c] + get_edge_length(c); c = p; p = parent[p]; } c = v; p = parent[c];
+            while(p != NULL_NODE) { v_dists[p] = v_dists[c] + get_edge_length(c); it = u_dists.find(p); if(it != u_dists.end()) { return it->second + v_dists[p]; } c = p; p = parent[p]; }
+            return -1.; // error, shouldn't reach here
         }
 };
 
