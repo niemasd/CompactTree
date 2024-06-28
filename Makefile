@@ -7,12 +7,14 @@ RELEASEFLAGS?=$(CXXFLAGS) -O3
 DEBUGFLAGS?=$(CXXFLAGS) -O0 -g #-pg
 
 # executables
-EXES=load_tree load_tree_topology print_mrca print_num_descendants print_root_dists print_stats
+EXES=load_tree load_tree_string load_tree_topology print_mrca print_num_descendants print_root_dists print_stats
 
 # compile
 all: $(EXES)
 load_tree: compact_tree.h load_tree.cpp
 	$(CXX) $(RELEASEFLAGS) -o load_tree load_tree.cpp
+load_tree_string: compact_tree.h load_tree_string.cpp
+	$(CXX) $(RELEASEFLAGS) -o load_tree_string load_tree_string.cpp
 load_tree_topology: compact_tree.h load_tree_topology.cpp
 	$(CXX) $(RELEASEFLAGS) -o load_tree_topology load_tree_topology.cpp
 print_mrca: compact_tree.h print_mrca.cpp

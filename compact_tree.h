@@ -70,13 +70,22 @@ class compact_tree {
 
     public:
         /**
-         * Load a tree from a file
-         * @param input The filename or Newick string of the tree to load
-         * @param is_fn `true` if `input` is a filename (default), otherwise `false` if `input` is a Newick string
+         * Load a tree from a Newick file or C string
+         * @param input The filename or C string of the tree to load
+         * @param is_fn `true` if `input` is a filename (default), otherwise `false` if `input` is the Newick tree as a C string
          * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
          * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
          */
         compact_tree(const char* input, bool is_fn = true, bool store_labels = true, bool store_lengths = true);
+
+        /**
+         * Load a tree from a Newick file or std::string
+         * @param input The filename or std::string of the tree to load
+         * @param is_fn `true` if `input` is a filename (default), otherwise `false` if `input` is the Newick tree as a std::string
+         * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
+         * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
+         */
+        compact_tree(const std::string & input, bool is_fn = true, bool store_labels = true, bool store_lengths = true) : compact_tree(input.c_str(), is_fn, store_labels, store_lengths) {}
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup

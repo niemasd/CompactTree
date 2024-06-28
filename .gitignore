@@ -1,5 +1,6 @@
 # compiled executable
 load_tree
+load_tree_string
 load_tree_topology
 print_mrca
 print_num_descendants
