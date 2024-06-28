@@ -1,5 +1,5 @@
-# Minimal Docker image for CompactTree development using Alpine base
-FROM alpine:3.13.5
+# Minimal Docker image for CompactTree development using Ubuntu base
+FROM ubuntu:latest
 MAINTAINER Niema Moshiri <niemamoshiri@gmail.com>
-RUN apk update && \
-    apk add bash g++ git make
+RUN apt-get update && apt-get -y upgrade && \
+    apt-get install -y g++ git make
