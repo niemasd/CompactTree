@@ -40,6 +40,8 @@ const CT_NODE_T NULL_NODE = (CT_NODE_T)(-1);
 
 // error messages
 const std::string ERROR_OPENING_FILE = "Error opening file";
+const std::string ERROR_INVALID_NEWICK_FILE = "Invalid Newick file";
+const std::string ERROR_INVALID_NEWICK_STRING = "Invalid Newick string";
 
 // compact_tree class
 class compact_tree {
@@ -412,5 +414,6 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
             }
         }
     }
+    throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
 }
 #endif
