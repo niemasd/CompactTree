@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
     if(argc != 3) {
         std::cerr << "USAGE: " << argv[0] << " <tree_file> <schema>" << std::endl; exit(1);
     }
-    compact_tree tree(argv[1], argv[2]);
+    compact_tree tree(argv[1], argv[2], true, false);
 
     // calculate and print root distances
     std::vector<unsigned int> num_descendants(tree.get_num_nodes(), 1);
