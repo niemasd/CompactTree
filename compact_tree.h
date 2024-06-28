@@ -38,6 +38,9 @@
 const std::string EMPTY_STRING = "";
 const CT_NODE_T NULL_NODE = (CT_NODE_T)(-1);
 
+// error messages
+const std::string ERROR_OPENING_FILE = "Error opening file";
+
 // compact_tree class
 class compact_tree {
     private:
@@ -247,14 +250,14 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
 compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool store_lengths) : has_labels(store_labels), has_lengths(store_lengths) {
     // set up file input: https://stackoverflow.com/a/17925143/2134991
     int fd = -1;
-    size_t bytes_read; size_t i;                  // variables to help with reading
+    size_t bytes_read = 0; size_t i;              // variables to help with reading
     char read_buf[IO_BUFFER_SIZE + 1];            // buffer for reading
     char str_buf[256] = {}; size_t str_buf_i = 0; // helper string buffer
     char* buf;                                    // either read_buf (if reading from file) or the C string (if reading Newick string)
     if(is_fn) {
-        open(input, O_RDONLY);
+        fd = open(input, O_RDONLY);
         if(fd == -1) {
-            return;                               // error opening file
+            throw std::invalid_argument(ERROR_OPENING_FILE + ": " + input);
         }
         posix_fadvise(fd, 0, 0, 1);               // FDADVICE_SEQUENTIAL
         buf = read_buf;
@@ -281,11 +284,13 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
 
     // read Newick tree byte-by-byte
     while(true) {
+        // either read from file or from Newick C string
         if(is_fn) {
             bytes_read = read(fd, buf, IO_BUFFER_SIZE);
         } else {
             buf = input;
         }
+
         // handle cases where we don't use the values in the buffer
         if(bytes_read == (size_t)(-1)) {
             return; // read failed
