@@ -58,9 +58,9 @@ class compact_tree {
         CT_NODE_T create_child(const CT_NODE_T parent_node);
 
         /**
-         * Helper function to calculate the number of leaves and internal nodes
+         * Helper function to calculate the number of leaves in O(n), which can then be used to calculate the number of internal nodes in O(1)
          */
-        void calc_num_leaves_internal();
+        void calc_num_leaves() { for(const auto & curr_children : children) { if(curr_children.size() == 0) { num_leaves += 1; } } }
 
     public:
         /**
@@ -74,32 +74,77 @@ class compact_tree {
          * Get the total number of nodes in the tree using a O(1) lookup
          * @return The number of nodes in the tree
          */
-        size_t get_num_nodes() const;
+        size_t get_num_nodes() const { return parent.size(); }
 
         /**
          * Get the total number of leaves in the tree. First time is O(n) scan; subsequent times are O(1) lookup
          * @return The number of leaves in the tree
          */
-        size_t get_num_leaves();
+        size_t get_num_leaves() { if(num_leaves == 0) { calc_num_leaves(); } return num_leaves; }
 
         /**
          * Get the total number of internal nodes in the tree. First time is O(n) scan; subsequent times are O(1) lookup
          * @return The number of internal nodes in the tree
          */
-        size_t get_num_internal();
+        size_t get_num_internal() { return get_num_nodes() - get_num_leaves(); }
+
+        /**
+         * Get the root of this tree (should always be 0)
+         * @return The root of this tree
+         */
+        CT_NODE_T get_root() const { return (CT_NODE_T)0; }
+
+        /**
+         * Get the parent of a node
+         * @param node The node to get the parent of
+         * @return The parent of `node`
+         */
+        CT_NODE_T get_parent(CT_NODE_T node) const { return parent[node]; }
+
+        /**
+         * Get the children of a node
+         * @param node The node to get the children of
+         * @return The children of `node`
+         */
+        const std::vector<CT_NODE_T> get_children(CT_NODE_T node) const { return children[node]; }
+
+        /**
+         * Get the incident edge length of a node
+         * @param node The node to get the incident edge length of
+         * @return The incident edge length of `node`
+         */
+        CT_LENGTH_T get_edge_length(CT_NODE_T node) const { return length[node]; }
 
         /**
          * Get the label of a node
          * @param node The node to get the label of
          * @return The label of `node`
          */
-        const std::string & get_label(CT_NODE_T node) const;
+        const std::string & get_label(CT_NODE_T node) const { return label[node]; }
 
         /**
          * Get all labels (return by reference)
          * @return A `vector<string>` where the `i`-th value is the label of node `i`
          */
-        const std::vector<std::string> & get_labels() const;
+        const std::vector<std::string> & get_labels() const { return label; }
+
+        /**
+         * Preorder traversal iterator. The only guarantee is that a node will be visited before its children
+         */
+        class preorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
+            private:
+                CT_NODE_T node;
+            public:
+                preorder_iterator(CT_NODE_T x) : node(x) {}
+                preorder_iterator(const preorder_iterator & it) : node(it.node) {}
+                preorder_iterator & operator++() { ++node; return *this; }
+                preorder_iterator operator++(int) { preorder_iterator tmp(*this); operator++(); return tmp; }
+                bool operator==(const preorder_iterator & rhs) const { return node == rhs.node; }
+                bool operator!=(const preorder_iterator & rhs) const { return node != rhs.node; }
+                CT_NODE_T operator*() { return node; }
+        };
+        preorder_iterator preorder_begin() { return preorder_iterator((CT_NODE_T)0); }
+        preorder_iterator preorder_end() { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
 };
 
 // helper function to create new node and add as child to parent
@@ -111,43 +156,6 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
     label.emplace_back("");                          // `label[tmp_node]` = label of new node (currently nothing)
     children[parent_node].emplace_back(tmp_node);    // add `tmp_node` as a new child of `parent_node`
     return tmp_node;
-}
-
-// calculate number of leaves/internal
-void compact_tree::calc_num_leaves_internal() {
-    for(const std::vector<CT_NODE_T> & curr_children : children) {
-        if(curr_children.size() == 0) {
-            num_leaves += 1;
-        }
-    }
-}
-
-// get number of leaves
-size_t compact_tree::get_num_leaves() {
-    if(num_leaves == 0) {
-        calc_num_leaves_internal();
-    }
-    return num_leaves;
-}
-
-// get number of internal nodes
-size_t compact_tree::get_num_internal() {
-    return get_num_nodes() - get_num_leaves();
-}
-
-// get number of nodes
-size_t compact_tree::get_num_nodes() const {
-    return parent.size();
-}
-
-// get label from node
-const std::string & compact_tree::get_label(CT_NODE_T node) const {
-    return label[node];
-}
-
-// get all labels
-const std::vector<std::string> & compact_tree::get_labels() const {
-    return label;
 }
 
 // compact_tree constructor (putting it last because it's super long)
@@ -211,7 +219,7 @@ compact_tree::compact_tree(const char* const fn, char* const schema) {
                             str_buf[str_buf_i] = (char)0;
                             parse_length = false;
                             --i; // need to re-read this character
-                            // TODO length[curr_node] = PARSE str_buf AS CT_LENGTH_T
+                            length[curr_node] = atof(str_buf);
                             break;
 
                         // edge comment (ignore for now)

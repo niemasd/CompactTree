@@ -14,4 +14,5 @@ int main(int argc, char** argv) {
     std::cout << "Number of Nodes: " << tree.get_num_nodes() << std::endl;
     std::cout << "- Leaves: " << tree.get_num_leaves() << std::endl;
     std::cout << "- Internal: " << tree.get_num_internal() << std::endl;
+    return 0;
 }
