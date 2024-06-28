@@ -89,7 +89,6 @@ class compact_tree {
          * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
          * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
          */
-        //explicit compact_tree(const std::string & input, bool is_fn = true, bool store_labels = true, bool store_lengths = true) : compact_tree(input.c_str(), is_fn, store_labels, store_lengths) {}
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup

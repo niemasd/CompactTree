@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
         std::cerr << "USAGE: " << argv[0] << " <tree_file>" << std::endl; exit(1);
     }
     auto start = std::chrono::system_clock::now();
-    compact_tree tree(argv[1], argv[2], false, false);
+    compact_tree tree(argv[1], true, false, false);
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "Loaded tree with " << tree.get_num_nodes() << " nodes in " << elapsed.count() << " seconds" << std::endl;

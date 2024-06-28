@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
     if(argc != 2) {
         std::cerr << "USAGE: " << argv[0] << " <tree_file>" << std::endl; exit(1);
     }
-    compact_tree tree(argv[1], argv[2], true, false);
+    compact_tree tree(argv[1], true, true, false);
 
     // calculate and print number of descendants
     std::vector<unsigned int> num_descendants(tree.get_num_nodes(), 1);

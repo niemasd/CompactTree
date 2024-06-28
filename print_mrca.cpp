@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     if(argc != 2) {
         std::cerr << "USAGE: " << argv[0] << " <tree_file>" << std::endl; exit(1);
     }
-    compact_tree tree(argv[1], argv[2], true, false);
+    compact_tree tree(argv[1], true, true, false);
 
     // find and print all pairwise leaf MRCAs
     std::vector<CT_NODE_T> leaves(tree.leaves_begin(), tree.leaves_end()); size_t num_leaves = leaves.size();
