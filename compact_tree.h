@@ -106,7 +106,7 @@ class compact_tree {
          * @param node The node to get the children of
          * @return The children of `node`
          */
-        const std::vector<CT_NODE_T> get_children(CT_NODE_T node) const { return children[node]; }
+        const std::vector<CT_NODE_T> & get_children(CT_NODE_T node) const { return children[node]; }
 
         /**
          * Get the incident edge length of a node
@@ -145,6 +145,24 @@ class compact_tree {
         };
         preorder_iterator preorder_begin() { return preorder_iterator((CT_NODE_T)0); }
         preorder_iterator preorder_end() { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
+
+        /**
+         * Postorder traversal iterator. The only guarantee is that a node will be visited before its parent
+         */
+        class postorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
+            private:
+                CT_NODE_T node;
+            public:
+                postorder_iterator(CT_NODE_T x) : node(x) {}
+                postorder_iterator(const postorder_iterator & it) : node(it.node) {}
+                postorder_iterator & operator++() { --node; return *this; }
+                postorder_iterator operator++(int) { postorder_iterator tmp(*this); operator++(); return tmp; }
+                bool operator==(const postorder_iterator & rhs) const { return node == rhs.node; }
+                bool operator!=(const postorder_iterator & rhs) const { return node != rhs.node; }
+                CT_NODE_T operator*() { return node; }
+        };
+        postorder_iterator postorder_begin() { return postorder_iterator((CT_NODE_T)(get_num_nodes() - 1)); }
+        postorder_iterator postorder_end() { return postorder_iterator((CT_NODE_T)(-1)); }
 };
 
 // helper function to create new node and add as child to parent

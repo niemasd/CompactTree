@@ -9,3 +9,5 @@ To demonstrate CompactTree's use, we provide a series of simple example programs
 
 * **[`load_tree.cpp`](load_tree.cpp)** - Just load a tree
 * **[`print_stats.cpp`](print_stats.cpp)** - Print statistics about a tree
+* **[`print_root_dists.cpp`](print_root_dists.cpp)** - Print the root distances of the labeled nodes in the tree (showcases preorder traversal)
+* **[`print_num_descendants.cpp`](print_num_descendants.cpp)** - Print the number of descendants of each labeled node in the tree (showcases postorder traversal)

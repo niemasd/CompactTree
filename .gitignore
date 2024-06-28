@@ -1,5 +1,6 @@
 # compiled executable
 load_tree
+print_num_descendants
 print_root_dists
 print_stats
 
