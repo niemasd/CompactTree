@@ -9,16 +9,12 @@
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::cerr, std::cout, std::endl
+#include <queue>         // std::queue
 #include <string>        // std::string
 #include <unistd.h>      // read()
 #include <unordered_map> // std::unordered_map
 #include <unordered_set> // std::unordered_set
 #include <vector>        // std::vector
-
-// general constants
-#define VERSION "0.0.1"
-#define IO_BUFFER_SIZE 16384
-const std::string EMPTY_STRING = "";
 
 // define node type, which is a fixed-width unsigned integer (default is 32-bit)
 #if defined CT_NODE_64
@@ -33,6 +29,12 @@ const std::string EMPTY_STRING = "";
 #else
 #define CT_LENGTH_T float
 #endif
+
+// general constants
+#define VERSION "0.0.1"
+#define IO_BUFFER_SIZE 16384
+const std::string EMPTY_STRING = "";
+const CT_NODE_T NULL_NODE = (CT_NODE_T)(-1);
 
 // compact_tree class
 class compact_tree {
@@ -167,8 +169,53 @@ class compact_tree {
                 CT_NODE_T operator*() { return node; }
         };
         postorder_iterator postorder_begin() { return postorder_iterator((CT_NODE_T)(get_num_nodes() - 1)); }
-        postorder_iterator postorder_end() { return postorder_iterator((CT_NODE_T)(-1)); }
+        postorder_iterator postorder_end() { return postorder_iterator(NULL_NODE); }
+
+        /**
+         * Leaves iterator
+         */
+        class leaves_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
+            private:
+                CT_NODE_T node; const compact_tree* const tree_ptr;
+            public:
+                leaves_iterator(CT_NODE_T x, const compact_tree* const tp) : node(x), tree_ptr(tp) {}
+                leaves_iterator(const leaves_iterator & it) : node(it.node), tree_ptr(it.tree_ptr) {}
+                leaves_iterator & operator++() { CT_NODE_T num_nodes = tree_ptr->get_num_nodes(); while(((++node) < num_nodes) && (tree_ptr->children[node].size() != 0)) {} return *this; }
+                leaves_iterator operator++(int) { leaves_iterator tmp(*this); operator++(); return tmp; }
+                bool operator==(const leaves_iterator & rhs) const { return node == rhs.node; }
+                bool operator!=(const leaves_iterator & rhs) const { return node != rhs.node; }
+                CT_NODE_T operator*() { return node; }
+        };
+        leaves_iterator leaves_begin() { CT_NODE_T node = (CT_NODE_T)0; CT_NODE_T num_nodes = get_num_nodes(); while(((++node) < num_nodes) && (children[node].size() != 0)) {} return leaves_iterator(node, this); }
+        leaves_iterator leaves_end() { return leaves_iterator((CT_NODE_T)get_num_nodes(), this); }
+
+        /**
+         * Find and return the Most Recent Common Ancestor (MRCA) of a collection of nodes
+         * @param nodes The nodes to find the MRCA of
+         * @return The MRCA of the nodes in `nodes`
+         */
+        CT_NODE_T find_mrca(const std::unordered_set<CT_NODE_T> & nodes);
 };
+
+// find the MRCA of nodes
+CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
+    std::queue<CT_NODE_T, std::deque<CT_NODE_T>> to_visit(std::deque<CT_NODE_T>(nodes.begin(), nodes.end()));
+    std::unordered_map<CT_NODE_T, uint32_t> count; std::unordered_map<CT_NODE_T, uint32_t>::iterator count_it;
+    CT_NODE_T curr_node; CT_NODE_T curr_parent; size_t total = nodes.size();
+    while(!to_visit.empty()) {
+        curr_node = to_visit.front(); to_visit.pop(); count_it = count.find(curr_node); curr_parent = parent[curr_node];
+        if(count_it == count.end()) { // current node hasn't been seen before, initialize its count to 0
+            count_it = count.emplace(curr_node, 0).first;
+        }
+        if((++(count_it->second)) == total) {
+            return curr_node;
+        }
+        if(curr_parent != NULL_NODE) {
+            to_visit.emplace(curr_parent);
+        }
+    }
+    return NULL_NODE; // shouldn't ever reach here
+}
 
 // helper function to create new node and add as child to parent
 CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
@@ -193,7 +240,7 @@ compact_tree::compact_tree(const char* const fn, char* const schema, bool store_
     }
 
     // set up root node (initially empty/blank)
-    parent.emplace_back((CT_NODE_T)(-1));
+    parent.emplace_back(NULL_NODE);
     children.emplace_back(std::vector<CT_NODE_T>());
     if(has_lengths) {
         length.emplace_back((CT_LENGTH_T)0);
