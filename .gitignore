@@ -13,6 +13,8 @@ print_stats
 *.nwk
 *.tre
 *.txt
+html
+latex
 
 # Prerequisites
 *.d
