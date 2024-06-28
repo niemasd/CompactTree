@@ -1,0 +1,15 @@
+name: Run tests
+on: [push]
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+    - name: Set up environment
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install -y g++ make
+    - name: Run tests
+      run: |
+        for f in * ; do test -x "$f" && ! test -d "$f" && "./$f" "example/example.nwk" "newick" > "$f.log" ; done
