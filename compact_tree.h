@@ -6,6 +6,7 @@
 #define COMPACT_TREE_H
 
 // include statements
+#include <cstdint>       // std::uint32_t, std::uint64_t
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::cerr, std::cout, std::endl
@@ -200,7 +201,7 @@ class compact_tree {
 // find the MRCA of nodes
 CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
     std::queue<CT_NODE_T, std::deque<CT_NODE_T>> to_visit(std::deque<CT_NODE_T>(nodes.begin(), nodes.end()));
-    std::unordered_map<CT_NODE_T, uint32_t> count; std::unordered_map<CT_NODE_T, uint32_t>::iterator count_it;
+    std::unordered_map<CT_NODE_T, CT_NODE_T> count; std::unordered_map<CT_NODE_T, CT_NODE_T>::iterator count_it;
     CT_NODE_T curr_node; CT_NODE_T curr_parent; size_t total = nodes.size();
     while(!to_visit.empty()) {
         curr_node = to_visit.front(); to_visit.pop(); count_it = count.find(curr_node); curr_parent = parent[curr_node];
