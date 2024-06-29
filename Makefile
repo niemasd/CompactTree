@@ -28,4 +28,4 @@ print_root_dists: compact_tree.h print_root_dists.cpp
 print_stats: compact_tree.h print_stats.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_stats print_stats.cpp
 clean:
-	$(RM) $(EXES) *.o
+	$(RM) -r $(EXES) *.o html latex

@@ -145,6 +145,15 @@ class compact_tree {
         const std::string & get_label(CT_NODE_T node) const { return has_labels ? label[node] : EMPTY_STRING; }
 
         /**
+         * Set the label of a node
+         * @param node The node to set the label of
+         * @param new_label The new label to set
+         */
+        void set_label(CT_NODE_T node, const std::string & new_label) {
+            if(!has_labels) { has_labels = true; label = std::vector<std::string>(get_num_nodes(), ""); } label[node] = new_label;
+        }
+
+        /**
          * Get all labels (return by reference)
          * @return A `vector<string>` where the `i`-th value is the label of node `i`
          */
