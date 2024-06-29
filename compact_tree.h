@@ -135,7 +135,16 @@ class compact_tree {
          * @param node The node to get the incident edge length of
          * @return The incident edge length of `node`
          */
-        CT_LENGTH_T get_edge_length(CT_NODE_T node) const { return has_lengths ? length[node] : (CT_LENGTH_T)0; }
+        CT_LENGTH_T get_edge_length(CT_NODE_T node) const { return has_lengths ? length[node] : (CT_LENGTH_T)0.; }
+
+        /**
+         * Set the incident edge length of a node
+         * @param node The node to set the incident edge length of
+         * @param The new edge length to set
+         */
+        void set_edge_length(CT_NODE_T node, CT_LENGTH_T new_length) {
+            if(!has_lengths) { has_lengths = true; length = std::vector<CT_LENGTH_T>(get_num_nodes(), (CT_LENGTH_T)0.); } length[node] = new_length;
+        }
 
         /**
          * Get the label of a node
