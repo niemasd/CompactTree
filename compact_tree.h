@@ -246,7 +246,7 @@ class compact_tree {
          * @param nodes The nodes whose subtree to extract
          * @return The subtree rooted at the MRCA of the nodes in `nodes`
          */
-        compact_tree extract_tree(const std::unordered_set<CT_NODE_T> & nodes) {
+        compact_tree extract_subtree(const std::unordered_set<CT_NODE_T> & nodes) {
             std::stringstream ss; print_newick(ss, find_mrca(nodes));
             return compact_tree(&ss.str()[0], false, true, true, 0);
         }
@@ -448,6 +448,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                     case ':':
                     case ',':
                     case ')':
+                    case ';':
                         --i; // need to re-read this character
                     case '\'':
                         str_buf[str_buf_i] = (char)0;
