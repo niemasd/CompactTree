@@ -1,4 +1,5 @@
 # compiled executable
+copy_tree
 load_tree
 load_tree_string
 load_tree_topology
