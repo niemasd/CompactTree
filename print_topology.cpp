@@ -1,7 +1,6 @@
 /**
  * Load a tree topology (no labels or lengths)
  */
-#include <chrono>
 #include <iostream>
 #include "compact_tree.h"
 int main(int argc, char** argv) {
@@ -9,10 +8,8 @@ int main(int argc, char** argv) {
     if(argc != 2) {
         std::cerr << "USAGE: " << argv[0] << " <tree_file>" << std::endl; exit(1);
     }
-    auto start = std::chrono::system_clock::now();
     compact_tree tree(argv[1], true, false, false);
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Loaded tree with " << tree.get_num_nodes() << " nodes in " << elapsed.count() << " seconds" << std::endl;
+    tree.print_newick(std::cout);
+    std::cout << std::endl;
     return 0;
 }

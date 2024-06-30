@@ -90,12 +90,18 @@ class compact_tree {
         compact_tree(const compact_tree & o) : parent(o.parent), children(o.children), label(o.label), length(o.length), num_leaves(o.num_leaves) {}
 
         /**
-         * Load a tree from a Newick file or std::string
-         * @param input The filename or std::string of the tree to load
-         * @param is_fn `true` if `input` is a filename (default), otherwise `false` if `input` is the Newick tree as a std::string
-         * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
-         * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
+         * Print the Newick string of the subtree rooted at a specific node
+         * @param out The output stream to print the Newick string to
+         * @param node The root of the subtree to print the Newick string of
+         * @param print_semicolon `true` to print a semicolon at the end of the Newick string (to end the tree), otherwise `false` (e.g. subtree)
          */
+        void print_newick(std::ostream & out, CT_NODE_T node, bool print_semicolon = true);
+
+        /**
+         * Print the Newick string of the entire tree
+         * @param out The output stream to print the Newick string to
+         */
+        void print_newick(std::ostream & out) { print_newick(out, (CT_NODE_T)0, true); }
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup
@@ -278,6 +284,27 @@ class compact_tree {
             return -1.; // error, shouldn't reach here
         }
 };
+
+// print Newick string (currently recursive)
+void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool print_semicolon) {
+    std::vector<CT_NODE_T> & curr_children = children[node]; size_t curr_num_children = curr_children.size();
+    for(size_t i = 0; i < curr_num_children; ++i) {
+        out << ((i == 0) ? '(' : ',');
+        print_newick(out, curr_children[i], false);
+        if(length.size() != 0) {
+            out << ':' << length[node];
+        }
+    }
+    if(curr_num_children != 0) {
+        out << ')';
+    }
+    if(label.size() != 0) {
+        out << label[node];
+    }
+    if(print_semicolon) {
+        out << ';';
+    }
+}
 
 // find the MRCA of nodes
 CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
