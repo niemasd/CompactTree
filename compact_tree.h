@@ -243,10 +243,10 @@ class compact_tree {
 
         /**
          * Extract the subtree rooted at the Most Recent Common Ancestor (MRCA) of a collection of nodes
-         * @param nodes The nodes whose subtree to extract
+         * @param nodes The nodes whose MRCA's subtree to extract
          * @return The subtree rooted at the MRCA of the nodes in `nodes`
          */
-        compact_tree extract_subtree(const std::unordered_set<CT_NODE_T> & nodes) {
+        compact_tree extract_subtree_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
             std::stringstream ss; print_newick(ss, find_mrca(nodes));
             return compact_tree(&ss.str()[0], false, true, true, 0);
         }

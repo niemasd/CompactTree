@@ -1,5 +1,5 @@
 /**
- * Load a tree
+ * Print the subtree rooted at the MRCA of two nodes in a given tree
  */
 #include <iostream>
 #include "compact_tree.h"
@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     }
     compact_tree tree(argv[1]);
     CT_NODE_T last_node = tree.get_num_nodes() - 1;
-    compact_tree subtree = tree.extract_subtree({last_node, last_node-1});
+    compact_tree subtree = tree.extract_subtree_mrca({last_node, last_node-1});
     subtree.print_newick(std::cout);
     std::cout << std::endl;
     return 0;
