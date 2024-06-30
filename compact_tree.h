@@ -81,8 +81,9 @@ class compact_tree {
          * @param is_fn `true` if `input` is a filename (default), otherwise `false` if `input` is the Newick tree as a C string
          * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
          * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
+         * @param reserve How many nodes to reserve memory for up-front to avoid `std::vector` resizes. It's fine if the true number of nodes in the tree exceeds this value (the `std::vector` will resize automatically), but get as close as possible for speed.
          */
-        compact_tree(char* input, bool is_fn = true, bool store_labels = true, bool store_lengths = true);
+        compact_tree(char* input, bool is_fn = true, bool store_labels = true, bool store_lengths = true, size_t reserve = 0);
 
         /**
          * Load a tree from a Newick file or std::string
@@ -310,7 +311,10 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
 }
 
 // compact_tree constructor (putting it last because it's super long)
-compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool store_lengths) : has_labels(store_labels), has_lengths(store_lengths) {
+compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool store_lengths, size_t reserve) : has_labels(store_labels), has_lengths(store_lengths) {
+    // reserve space up-front (if given `reserve`) to reduce resizing (save time)
+    if(reserve != 0) { parent.reserve(reserve); if(has_lengths) { length.reserve(reserve); } if(has_labels) { label.reserve(reserve); } }
+
     // set up file input: https://stackoverflow.com/a/17925143/2134991
     int fd = -1;
     size_t bytes_read = 0; size_t i;              // variables to help with reading
