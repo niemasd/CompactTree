@@ -9,6 +9,7 @@ int main(int argc, char** argv) {
         std::cerr << "USAGE: " << argv[0] << " <tree_file>" << std::endl; exit(1);
     }
     compact_tree tree(argv[1]);
-    // TODO pick the last 2 leaves and extract their subtree to print to std::cout
+    CT_NODE_T last_node = tree.get_num_nodes() - 1;
+    compact_tree subtree = tree.extract_tree({last_node, last_node-1});
     return 0;
 }

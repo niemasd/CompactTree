@@ -248,7 +248,7 @@ class compact_tree {
          */
         compact_tree extract_tree(const std::unordered_set<CT_NODE_T> & nodes) {
             std::stringstream ss; print_newick(ss, find_mrca(nodes));
-            return compact_tree(&ss.str()[0]);
+            return compact_tree(&ss.str()[0], false, true, true, 0);
         }
 
         /**
