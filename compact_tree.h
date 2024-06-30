@@ -11,6 +11,7 @@
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::cerr, std::cout, std::endl
 #include <queue>         // std::queue
+#include <sstream>       // std::stringstream
 #include <stdexcept>     // std::invalid_argument
 #include <string>        // std::string
 #include <unistd.h>      // read()
@@ -239,6 +240,16 @@ class compact_tree {
          * @return The MRCA of the nodes in `nodes`
          */
         CT_NODE_T find_mrca(const std::unordered_set<CT_NODE_T> & nodes);
+
+        /**
+         * Extract the subtree rooted at the Most Recent Common Ancestor (MRCA) of a collection of nodes
+         * @param nodes The nodes whose subtree to extract
+         * @return The subtree rooted at the MRCA of the nodes in `nodes`
+         */
+        compact_tree extract_tree(const std::unordered_set<CT_NODE_T> & nodes) {
+            std::stringstream ss; print_newick(ss, find_mrca(nodes));
+            return compact_tree(&ss.str()[0]);
+        }
 
         /**
          * Calculate the total branch length of this tree
