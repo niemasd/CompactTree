@@ -41,6 +41,7 @@
 // general constants
 #define VERSION "0.0.1"
 #define IO_BUFFER_SIZE 16384
+#define STR_BUFFER_SIZE 1024
 const std::string EMPTY_STRING = "";
 const CT_NODE_T NULL_NODE = (CT_NODE_T)(-1);
 
@@ -383,7 +384,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
     int fd = -1;
     size_t bytes_read = 0; size_t i;              // variables to help with reading
     char read_buf[IO_BUFFER_SIZE + 1];            // buffer for reading
-    char str_buf[256] = {}; size_t str_buf_i = 0; // helper string buffer
+    char str_buf[STR_BUFFER_SIZE] = {}; size_t str_buf_i = 0; // helper string buffer
     char* buf;                                    // either read_buf (if reading from file) or the C string (if reading Newick string)
     if(is_fn) {
         fd = open(input, O_RDONLY);
@@ -442,22 +443,16 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                     case ',':
                     case ')':
                     case ';':
-                        str_buf[str_buf_i] = (char)0;
-                        parse_length = false;
-                        --i; // need to re-read this character
-                        if(length.size() != 0) {
-                            length[curr_node] = PARSE_LENGTH_FROM_C_STR(str_buf);
-                        }
-                        break;
+                        if(store_lengths) { str_buf[str_buf_i] = (char)0; length[curr_node] = PARSE_LENGTH_FROM_C_STR(str_buf); }
+                        parse_length = false; --i; break; // need to re-read this character
 
                     // edge comment (ignore for now)
                     case '[':
-                        parse_comment = true;
-                        break;
+                        parse_comment = true; break;
 
                     // character within edge length
                     default:
-                        str_buf[str_buf_i++] = buf[i];
+                        if(store_lengths) { str_buf[str_buf_i++] = buf[i]; }
                         break;
                 }
             }
@@ -466,7 +461,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
             else if(parse_label) {
                 // parsing quoted label ('' or ""), so blindly add next char to label
                 if(parse_label_single || parse_label_double) {
-                    str_buf[str_buf_i++] = buf[i];
+                    if(store_labels) { str_buf[str_buf_i++] = buf[i]; }
                     if(buf[i] == '\'' && parse_label_single) {
                         parse_label = false; parse_label_single = false;
                     } else if(buf[i] == '"' && parse_label_double) {
@@ -477,20 +472,17 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                 // parsing non-quoted label, so check next char for validity before adding
                 else {
                     switch(buf[i]) {
-                        case ':':
-                        case ',':
-                        case ')':
-                        case ';':
+                        case ':': case ',': case ')': case ';':
                             parse_label = false; --i; break; // finished label, so need to re-read this character
                         default:
-                            str_buf[str_buf_i++] = buf[i]; break;
+                            if(store_labels) { str_buf[str_buf_i++] = buf[i]; } break;
                     }
                 }
 
                 // if we finished parsing the label, finalize it
                 if(!parse_label) {
-                    str_buf[str_buf_i] = (char)0; parse_label = false;
-                    if(store_labels) { label[curr_node] = str_buf; }
+                    if(store_labels) { str_buf[str_buf_i] = (char)0; label[curr_node] = str_buf; }
+                    parse_label = false;
                 }
             }
 
@@ -510,43 +502,42 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                         if(curr_node == NULL_NODE) {
                             throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
                         }
-                        curr_node = create_child(curr_node);
-                        break;
+                        curr_node = create_child(curr_node); break;
 
                     // go to parent
                     case ')':
-                        curr_node = parent[curr_node];
-                        break;
+                        curr_node = parent[curr_node]; break;
 
                     // go to new sibling
                     case ',':
                         if((curr_node == NULL_NODE) || (parent[curr_node] == NULL_NODE)) {
                             throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
                         }
-                        curr_node = create_child(parent[curr_node]);
-                        break;
+                        curr_node = create_child(parent[curr_node]); break;
 
                     // node comment (ignore for now)
                     case '[':
-                        parse_comment = true;
-                        break;
+                        parse_comment = true; break;
 
                     // edge length
                     case ':':
-                        parse_length = true; str_buf_i = 0;
-                        break;
+                        if(store_lengths) { str_buf_i = 0; }
+                        parse_length = true; break;
 
                     // about to parse a node label in single quotes ('')
                     case '\'':
-                        str_buf_i = 0; parse_label = true; parse_label_single = true; break;
+                        if(store_labels) { str_buf_i = 0; }
+                        parse_label = true; parse_label_single = true; break;
 
                     // about to parse a node label in double quotes ("")
                     case '"':
-                        str_buf_i = 0; parse_label = true; parse_label_double = true; break;
+                        if(store_labels) { str_buf_i = 0; }
+                        parse_label = true; parse_label_double = true; break;
 
                     // about to start a node label without quotes
                     default:
-                        str_buf_i = 0; parse_label = true; --i; break; // need to re-read this character (it's part of the label)
+                        if(store_labels) { str_buf_i = 0; }
+                        parse_label = true; --i; break; // need to re-read this character (it's part of the label)
                 }
             }
         }
