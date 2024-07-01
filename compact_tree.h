@@ -7,6 +7,7 @@
 
 // include statements
 #include <cstdint>       // std::uint32_t, std::uint64_t
+#include <cstdlib>       // std::atof
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::cerr, std::cout, std::endl
@@ -31,8 +32,10 @@
 // define edge length type, which is a floating point number (default is float)
 #if defined CT_LENGTH_DOUBLE
 #define CT_LENGTH_T double
+#define PARSE_LENGTH_FROM_C_STR std::atof
 #else
 #define CT_LENGTH_T float
+#define PARSE_LENGTH_FROM_C_STR (float)std::atof
 #endif
 
 // general constants
@@ -401,10 +404,12 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
     if(store_labels) { label.emplace_back(""); }
 
     // set up initial Newick parsing state
-    CT_NODE_T curr_node = 0;    // start at root node (0)
-    bool parse_length = false;  // parsing a length right now?
-    bool parse_label = false;   // parsing a label right now?
-    bool parse_comment = false; // parsing a comment [...] right now?
+    CT_NODE_T curr_node = 0;         // start at root node (0)
+    bool parse_length = false;       // parsing a length right now?
+    bool parse_label = false;        // parsing a label right now?
+    bool parse_label_single = false; // parsing a single-quote label right now?
+    bool parse_label_double = false; // parsing a double-quote label right now?
+    bool parse_comment = false;      // parsing a comment [...] right now?
 
     // read Newick tree byte-by-byte
     while(true) {
@@ -415,12 +420,9 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
             buf = input;
         }
 
-        // handle cases where we don't use the values in the buffer
-        if(bytes_read == (size_t)(-1)) {
-            return; // read failed
-        }
-        if(!bytes_read) {
-            break; // done reading
+        // handle done reading (!bytes_read) and read failed (bytes_read == -1)
+        if(!bytes_read || bytes_read == (size_t)(-1)) {
+            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
         }
 
         // iterate over the characters in the buffer
@@ -444,7 +446,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                         parse_length = false;
                         --i; // need to re-read this character
                         if(length.size() != 0) {
-                            length[curr_node] = atof(str_buf);
+                            length[curr_node] = PARSE_LENGTH_FROM_C_STR(str_buf);
                         }
                         break;
 
@@ -462,30 +464,33 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
 
             // currently parsing a node label
             else if(parse_label) {
-                switch(buf[i]) {
-                    // finished parsing node label
-                    case ':':
-                    case ',':
-                    case ')':
-                    case ';':
-                        --i; // need to re-read this character
-                    case '\'':
-                        str_buf[str_buf_i] = (char)0;
-                        parse_label = false;
-                        if(label.size() != 0) {
-                            label[curr_node] = str_buf;
-                        }
-                        break;
+                // parsing quoted label ('' or ""), so blindly add next char to label
+                if(parse_label_single || parse_label_double) {
+                    str_buf[str_buf_i++] = buf[i];
+                    if(buf[i] == '\'' && parse_label_single) {
+                        parse_label = false; parse_label_single = false;
+                    } else if(buf[i] == '"' && parse_label_double) {
+                        parse_label = false; parse_label_double = false;
+                    }
+                }
 
-                    // node comment (ignore for now)
-                    case '[':
-                        parse_comment = true;
-                        break;
+                // parsing non-quoted label, so check next char for validity before adding
+                else {
+                    switch(buf[i]) {
+                        case ':':
+                        case ',':
+                        case ')':
+                        case ';':
+                            parse_label = false; --i; break; // finished label, so need to re-read this character
+                        default:
+                            str_buf[str_buf_i++] = buf[i]; break;
+                    }
+                }
 
-                    // character within node label
-                    default:
-                        str_buf[str_buf_i++] = buf[i];
-                        break;
+                // if we finished parsing the label, finalize it
+                if(!parse_label) {
+                    str_buf[str_buf_i] = (char)0; parse_label = false;
+                    if(store_labels) { label[curr_node] = str_buf; }
                 }
             }
 
@@ -531,19 +536,20 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                         parse_length = true; str_buf_i = 0;
                         break;
 
-                    // about to parse a node label in quotes ('')
+                    // about to parse a node label in single quotes ('')
                     case '\'':
-                        parse_label = true; str_buf_i = 0;
+                        str_buf_i = 0; parse_label = true; parse_label_single = true; break;
+
+                    // about to parse a node label in double quotes ("")
+                    case '"':
+                        str_buf_i = 0; parse_label = true; parse_label_double = true; break;
 
                     // about to start a node label without quotes
                     default:
-                        parse_label = true; str_buf_i = 0;
-                        --i; // need to re-read this character (it's part of the label)
-                        break;
+                        str_buf_i = 0; parse_label = true; --i; break; // need to re-read this character (it's part of the label)
                 }
             }
         }
     }
-    throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
 }
 #endif
