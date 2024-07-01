@@ -12,11 +12,13 @@
 #include <iostream>      // std::cerr, std::cout, std::endl
 #include <queue>         // std::queue
 #include <sstream>       // std::stringstream
+#include <stack>         // std::stack
 #include <stdexcept>     // std::invalid_argument
 #include <string>        // std::string
 #include <unistd.h>      // read()
 #include <unordered_map> // std::unordered_map
 #include <unordered_set> // std::unordered_set
+#include <utility>       // std::pair
 #include <vector>        // std::vector
 
 // define node type, which is a fixed-width unsigned integer (default is 32-bit)
@@ -60,6 +62,11 @@ class compact_tree {
          */
         CT_NODE_T tmp_node;      // temporary holding variable for nodes (e.g. new child); value should only be used immediately after assigning
         size_t num_leaves = 0;   // cache the total number of leaves (avoid recalculation)
+
+        /**
+         * Helper constructor to create a completely empty compact_tree
+         */
+        compact_tree() {}
 
         /**
          * Helper function to create a new node and add it as a child to a given node
@@ -242,14 +249,18 @@ class compact_tree {
         CT_NODE_T find_mrca(const std::unordered_set<CT_NODE_T> & nodes);
 
         /**
+         * Extract the subtree rooted at a given node
+         * @param node The node that is the root of the desired subtree
+         * @return The subtree rooted at `node`
+         */
+        compact_tree extract_subtree(CT_NODE_T node);
+
+        /**
          * Extract the subtree rooted at the Most Recent Common Ancestor (MRCA) of a collection of nodes
          * @param nodes The nodes whose MRCA's subtree to extract
          * @return The subtree rooted at the MRCA of the nodes in `nodes`
          */
-        compact_tree extract_subtree_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
-            std::stringstream ss; print_newick(ss, find_mrca(nodes));
-            return compact_tree(&ss.str()[0], false, true, true, 0);
-        }
+        compact_tree extract_subtree_mrca(const std::unordered_set<CT_NODE_T> & nodes) { return extract_subtree(find_mrca(nodes)); }
 
         /**
          * Calculate the total branch length of this tree
@@ -299,22 +310,11 @@ class compact_tree {
 // print Newick string (currently recursive)
 void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool print_semicolon) {
     std::vector<CT_NODE_T> & curr_children = children[node]; size_t curr_num_children = curr_children.size();
-    for(size_t i = 0; i < curr_num_children; ++i) {
-        out << ((i == 0) ? '(' : ',');
-        print_newick(out, curr_children[i], false);
-        if(length.size() != 0) {
-            out << ':' << length[node];
-        }
-    }
-    if(curr_num_children != 0) {
-        out << ')';
-    }
-    if(label.size() != 0) {
-        out << label[node];
-    }
-    if(print_semicolon) {
-        out << ';';
-    }
+    for(size_t i = 0; i < curr_num_children; ++i) { out << ((i == 0) ? '(' : ','); print_newick(out, curr_children[i], false); }
+    if(curr_num_children != 0) { out << ')'; }
+    if(label.size() != 0) { out << label[node]; }
+    if(length.size() != 0) { out << ':' << length[node]; }
+    if(print_semicolon) { out << ';'; }
 }
 
 // find the MRCA of nodes
@@ -350,6 +350,25 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
     }
     children[parent_node].emplace_back(tmp_node);    // add `tmp_node` as a new child of `parent_node`
     return tmp_node;
+}
+
+// extract a subtree
+compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
+    compact_tree new_tree; std::stack<std::pair<CT_NODE_T, CT_NODE_T>> to_copy; to_copy.push(std::make_pair(node,0)); // first = old tree; second = new tree
+    bool has_lengths = (length.size() != 0); bool has_labels = (label.size() != 0);
+    new_tree.parent.emplace_back(NULL_NODE); new_tree.children.emplace_back(std::vector<CT_NODE_T>());
+    if(has_lengths) { new_tree.length.emplace_back((CT_LENGTH_T)0.); }
+    if(has_labels) { new_tree.label.emplace_back(""); }
+    std::pair<CT_NODE_T, CT_NODE_T> curr; size_t tmp_num_children_old; size_t tmp_ind_old;
+    while(!to_copy.empty()) {
+        curr = to_copy.top(); to_copy.pop(); std::vector<CT_NODE_T> & children_old = children[curr.first]; tmp_num_children_old = children_old.size();
+        if(has_lengths) { new_tree.length[curr.second] = length[curr.first]; }
+        if(has_labels) { new_tree.label[curr.second] = label[curr.first]; }
+        for(tmp_ind_old = 0; tmp_ind_old < tmp_num_children_old; ++tmp_ind_old) {
+            to_copy.push(std::make_pair(children_old[tmp_ind_old], new_tree.create_child(curr.second)));
+        }
+    }
+    return new_tree;
 }
 
 // compact_tree constructor (putting it last because it's super long)

@@ -13,6 +13,7 @@ int main(int argc, char** argv) {
     compact_tree tree(argv[1]);
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Loaded tree with " << tree.get_num_nodes() << " nodes in " << elapsed.count() << " seconds" << std::endl;
+    //std::cout << "Loaded tree with " << tree.get_num_nodes() << " nodes in " << elapsed.count() << " seconds" << std::endl;
+    tree.print_newick(std::cout); std::cout << std::endl; // TODO DELETE
     return 0;
 }
