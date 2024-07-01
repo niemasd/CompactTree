@@ -495,6 +495,9 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
 
                     // end of Newick string
                     case ';':
+                        if(curr_node != (CT_NODE_T)0) {
+                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+                        }
                         return;
 
                     // go to new child
