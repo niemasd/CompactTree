@@ -7,14 +7,10 @@
 
 // include statements
 #include <cstdint>       // std::uint32_t, std::uint64_t
-#include <cstdio>        // fopen
 #include <cstdlib>       // std::atof
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
-#include <fstream>       // std::ifstream
-#include <iostream>      // std::cerr, std::cout, std::endl
 #include <queue>         // std::queue
-#include <sstream>       // std::stringstream
 #include <stack>         // std::stack
 #include <stdexcept>     // std::invalid_argument
 #include <string>        // std::string

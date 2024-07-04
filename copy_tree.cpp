@@ -1,6 +1,7 @@
 /**
- * Load a tree
+ * Copy a tree
  */
+#include <iostream>
 #include "compact_tree.h"
 int main(int argc, char** argv) {
     // check user args
