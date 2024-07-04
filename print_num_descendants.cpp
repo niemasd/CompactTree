@@ -16,12 +16,9 @@ int main(int argc, char** argv) {
     compact_tree::postorder_iterator it_end = tree.postorder_end();
     CT_NODE_T curr_node;
     for(compact_tree::postorder_iterator it = tree.postorder_begin(); it != it_end; ++it) {
-        curr_node = *it;
-        const std::vector<CT_NODE_T> & curr_children = tree.get_children(curr_node);
-        if(curr_children.size() != 0) {
-            for(auto child_node : curr_children) {
-                num_descendants[curr_node] += num_descendants[child_node];
-            }
+        curr_node = *it; auto child_it_end = tree.children_end();
+        for(auto child_it = tree.children_begin(curr_node); child_it != child_it_end; ++child_it) {
+            num_descendants[curr_node] += num_descendants[*child_it];
         }
         std::cout << tree.get_label(curr_node) << ": " << num_descendants[curr_node] << std::endl;
     }

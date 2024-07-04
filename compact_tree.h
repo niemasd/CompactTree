@@ -9,14 +9,13 @@
 #include <cstdint>       // std::uint32_t, std::uint64_t
 #include <cstdlib>       // std::atof
 #include <cstring>       // strcmp()
-#include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
+#include <fstream>       // std::ifstream
 #include <iostream>      // std::cerr, std::cout, std::endl
 #include <queue>         // std::queue
 #include <sstream>       // std::stringstream
 #include <stack>         // std::stack
 #include <stdexcept>     // std::invalid_argument
 #include <string>        // std::string
-#include <unistd.h>      // read()
 #include <unordered_map> // std::unordered_map
 #include <unordered_set> // std::unordered_set
 #include <utility>       // std::pair
@@ -32,18 +31,19 @@
 // define edge length type, which is a floating point number (default is float)
 #if defined CT_LENGTH_DOUBLE
 #define CT_LENGTH_T double
-#define PARSE_LENGTH_FROM_C_STR std::atof
+#define PARSE_LENGTH_FROM_STRING std::stod
 #else
 #define CT_LENGTH_T float
-#define PARSE_LENGTH_FROM_C_STR (float)std::atof
+#define PARSE_LENGTH_FROM_STRING std::stof
 #endif
 
 // general constants
-#define VERSION "0.0.1"
-#define IO_BUFFER_SIZE 16384
-#define STR_BUFFER_SIZE 1024
+#define VERSION "0.0.2"
+#define STR_BUFFER_SIZE 16384
 const std::string EMPTY_STRING = "";
+const CT_NODE_T ROOT_NODE = (CT_NODE_T)0;
 const CT_NODE_T NULL_NODE = (CT_NODE_T)(-1);
+const CT_LENGTH_T ZERO_LENGTH = (CT_LENGTH_T)0.;
 
 // error messages
 const std::string ERROR_OPENING_FILE = "Error opening file";
@@ -56,15 +56,24 @@ class compact_tree {
         /**
          * compact_tree important member variables
          */
-        std::vector<CT_NODE_T> parent;                // `parent[i]` is the parent of node `i`
-        std::vector<std::vector<CT_NODE_T>> children; // `children[i]` is a `vector` containing the children of node `i`
-        std::vector<std::string> label;               // `label[i]` is the label of node `i`
-        std::vector<CT_LENGTH_T> length;              // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
+        std::vector<CT_NODE_T> parent;                         // `parent[i]` is the parent of node `i`
+        std::vector<std::pair<CT_NODE_T, CT_NODE_T>> children; // The children of node `i` are the nodes `children[i].first <= x <= children[i].second`
+        std::vector<std::string> label;                        // `label[i]` is the label of node `i`
+        std::vector<CT_LENGTH_T> length;                       // `length[i]` is the length of the edge incident to (i.e., going into) node `i`
+
+        /**
+         * Private helper function to print member variables (for debugging)
+         */
+        void print_members(std::ostream & out) {
+            out << "parent: "; for(auto curr : parent) { out << curr << ' '; } out << std::endl;
+            out << "children: "; for(auto curr : children) { out << '(' << curr.first << ',' << curr.second << ") "; } out << std::endl;
+            out << "label: "; for(auto curr : label) { out << '\'' << curr << "' "; } out << std::endl;
+            out << "length: "; for(auto curr : length) { out << curr << ' '; } out << std::endl;
+        }
 
         /**
          * compact_tree helper member variables
          */
-        CT_NODE_T tmp_node;      // temporary holding variable for nodes (e.g. new child); value should only be used immediately after assigning
         size_t num_leaves = 0;   // cache the total number of leaves (avoid recalculation)
 
         /**
@@ -77,12 +86,12 @@ class compact_tree {
          * @param parent_node The parent node
          * @return The newly-created child node
          */
-        CT_NODE_T create_child(const CT_NODE_T parent_node);
+        CT_NODE_T create_child(const CT_NODE_T parent_node, bool store_labels, bool store_lengths);
 
         /**
          * Helper function to calculate the number of leaves in O(n), which can then be used to calculate the number of internal nodes in O(1)
          */
-        void calc_num_leaves() { for(const auto & curr_children : children) { if(curr_children.size() == 0) { num_leaves += 1; } } }
+        void calc_num_leaves() { CT_NODE_T num_nodes = parent.size(); for(CT_NODE_T curr = 0; curr < num_nodes; ++curr) { if(is_leaf(curr)) { num_leaves += 1; } } }
 
     public:
         /**
@@ -113,7 +122,7 @@ class compact_tree {
          * Print the Newick string of the entire tree
          * @param out The output stream to print the Newick string to
          */
-        void print_newick(std::ostream & out) { print_newick(out, (CT_NODE_T)0, true); }
+        void print_newick(std::ostream & out) { print_newick(out, ROOT_NODE, true); }
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup
@@ -137,7 +146,21 @@ class compact_tree {
          * Get the root of this tree (should always be 0)
          * @return The root of this tree
          */
-        CT_NODE_T get_root() const { return (CT_NODE_T)0; }
+        CT_NODE_T get_root() const { return ROOT_NODE; }
+
+        /**
+         * Check if a node is the root
+         * @param node The node to check
+         * @return `true` if `node` is the root, otherwise `false`
+         */
+        bool is_root(CT_NODE_T node) const { return node == ROOT_NODE; }
+
+        /**
+         * Check if a node is a leaf
+         * @param node The node to check
+         * @return `true` if `node` is a leaf, otherwise `false`
+         */
+        bool is_leaf(CT_NODE_T node) const { return children[node].first == NULL_NODE; }
 
         /**
          * Get the parent of a node
@@ -147,18 +170,22 @@ class compact_tree {
         CT_NODE_T get_parent(CT_NODE_T node) const { return parent[node]; }
 
         /**
-         * Get the children of a node
-         * @param node The node to get the children of
-         * @return The children of `node`
-         */
-        const std::vector<CT_NODE_T> & get_children(CT_NODE_T node) const { return children[node]; }
+         * Check if this tree is storing edge lengths
+         * @return `true` if this tree is storing edge lengths, otherwise `false`
+        */
+        bool has_edge_lengths() const { return length.size() != 0; }
 
         /**
          * Get the incident edge length of a node
          * @param node The node to get the incident edge length of
          * @return The incident edge length of `node`
          */
-        CT_LENGTH_T get_edge_length(CT_NODE_T node) const { return (length.size() == 0) ? (CT_LENGTH_T)0. : length[node]; }
+        CT_LENGTH_T get_edge_length(CT_NODE_T node) const { return has_edge_lengths() ? length[node] : (CT_LENGTH_T)0.; }
+
+        /**
+         * Get all edge lengths (return by reference)
+         */
+        const std::vector<CT_LENGTH_T> & get_edge_lengths() const { return length; }
 
         /**
          * Set the incident edge length of a node
@@ -166,15 +193,21 @@ class compact_tree {
          * @param The new edge length to set
          */
         void set_edge_length(CT_NODE_T node, CT_LENGTH_T new_length) {
-            if(length.size() == 0) { length = std::vector<CT_LENGTH_T>(get_num_nodes(), (CT_LENGTH_T)0.); } length[node] = new_length;
+            if(!has_edge_lengths()) { length = std::vector<CT_LENGTH_T>(get_num_nodes(), (CT_LENGTH_T)0.); } length[node] = new_length;
         }
+
+        /**
+         * Check if this tree is storing labels
+         * @return `true` if this tree is storing labels, otherwise `false`
+         */
+        bool has_labels() const { return label.size() != 0; }
 
         /**
          * Get the label of a node
          * @param node The node to get the label of
          * @return The label of `node`
          */
-        const std::string & get_label(CT_NODE_T node) const { return (label.size() == 0) ? EMPTY_STRING : label[node]; }
+        const std::string & get_label(CT_NODE_T node) const { return has_labels() ? label[node] : EMPTY_STRING; }
 
         /**
          * Set the label of a node
@@ -182,7 +215,7 @@ class compact_tree {
          * @param new_label The new label to set
          */
         void set_label(CT_NODE_T node, const std::string & new_label) {
-            if(label.size() == 0) { label = std::vector<std::string>(get_num_nodes(), ""); } label[node] = new_label;
+            if(!has_labels()) { label = std::vector<std::string>(get_num_nodes(), ""); } label[node] = new_label;
         }
 
         /**
@@ -206,7 +239,7 @@ class compact_tree {
                 bool operator!=(const preorder_iterator & rhs) const { return node != rhs.node; }
                 CT_NODE_T operator*() { return node; }
         };
-        preorder_iterator preorder_begin() { return preorder_iterator((CT_NODE_T)0); }
+        preorder_iterator preorder_begin() { return preorder_iterator(ROOT_NODE); }
         preorder_iterator preorder_end() { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
 
         /**
@@ -228,7 +261,7 @@ class compact_tree {
         postorder_iterator postorder_end() { return postorder_iterator(NULL_NODE); }
 
         /**
-         * Leaves iterator
+         * Iterate over the leaves of this tree
          */
         class leaves_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
             private:
@@ -236,14 +269,32 @@ class compact_tree {
             public:
                 leaves_iterator(CT_NODE_T x, const compact_tree* const tp) : node(x), tree_ptr(tp) {}
                 leaves_iterator(const leaves_iterator & it) : node(it.node), tree_ptr(it.tree_ptr) {}
-                leaves_iterator & operator++() { CT_NODE_T num_nodes = tree_ptr->get_num_nodes(); while(((++node) < num_nodes) && (tree_ptr->children[node].size() != 0)) {} return *this; }
+                leaves_iterator & operator++() { CT_NODE_T num_nodes = tree_ptr->get_num_nodes(); while(((++node) < num_nodes) && !(tree_ptr->is_leaf(node))) {} return *this; }
                 leaves_iterator operator++(int) { leaves_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const leaves_iterator & rhs) const { return node == rhs.node; }
                 bool operator!=(const leaves_iterator & rhs) const { return node != rhs.node; }
                 CT_NODE_T operator*() { return node; }
         };
-        leaves_iterator leaves_begin() { CT_NODE_T node = (CT_NODE_T)0; CT_NODE_T num_nodes = get_num_nodes(); while(((++node) < num_nodes) && (children[node].size() != 0)) {} return leaves_iterator(node, this); }
+        leaves_iterator leaves_begin() { CT_NODE_T node = ROOT_NODE; CT_NODE_T num_nodes = get_num_nodes(); while(((++node) < num_nodes) && (!is_leaf(node))) {} return leaves_iterator(node, this); }
         leaves_iterator leaves_end() { return leaves_iterator((CT_NODE_T)get_num_nodes(), this); }
+
+        /**
+         * Iterate over the children of a given node
+         */
+        class children_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
+            private:
+                CT_NODE_T node; const compact_tree* const tree_ptr;
+            public:
+                children_iterator(CT_NODE_T x, const compact_tree* const tp) : node(x), tree_ptr(tp) {}
+                children_iterator(const children_iterator & it) : node(it.node), tree_ptr(it.tree_ptr) {}
+                children_iterator & operator++() { node = (node == tree_ptr->children[tree_ptr->parent[node]].second) ? NULL_NODE : (node + 1); return *this; }
+                children_iterator operator++(int) { children_iterator tmp(*this); operator++(); return tmp; }
+                bool operator==(const children_iterator & rhs) const { return node == rhs.node; }
+                bool operator!=(const children_iterator & rhs) const { return node != rhs.node; }
+                CT_NODE_T operator*() { return node; }
+        };
+        children_iterator children_begin(CT_NODE_T node) { return children_iterator(children[node].first, this); }
+        children_iterator children_end() { return children_iterator(NULL_NODE, this); }
 
         /**
          * Find and return the Most Recent Common Ancestor (MRCA) of a collection of nodes
@@ -260,13 +311,6 @@ class compact_tree {
         compact_tree extract_subtree(CT_NODE_T node);
 
         /**
-         * Extract the subtree rooted at the Most Recent Common Ancestor (MRCA) of a collection of nodes
-         * @param nodes The nodes whose MRCA's subtree to extract
-         * @return The subtree rooted at the MRCA of the nodes in `nodes`
-         */
-        compact_tree extract_subtree_mrca(const std::unordered_set<CT_NODE_T> & nodes) { return extract_subtree(find_mrca(nodes)); }
-
-        /**
          * Calculate the total branch length of this tree
          * @param include_internal `true` to include internal nodes, otherwise `false`
          * @param include_leaves `true` to include leaves, otherwise `false`
@@ -276,7 +320,7 @@ class compact_tree {
             if(!(include_internal || include_leaves)) { return 0.; }
             double tot = 0; CT_NODE_T num_nodes = get_num_nodes();
             for(CT_NODE_T node = 0; node < num_nodes; ++node) {
-                if(children[node].size() == 0) { if(include_leaves) { tot += get_edge_length(node); } }
+                if(is_leaf(node)) { if(include_leaves) { tot += get_edge_length(node); } }
                 else { if(include_internal) { tot += get_edge_length(node); } }
             }
             return tot;
@@ -313,9 +357,9 @@ class compact_tree {
 
 // print Newick string (currently recursive)
 void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool print_semicolon) {
-    std::vector<CT_NODE_T> & curr_children = children[node]; size_t curr_num_children = curr_children.size();
-    for(size_t i = 0; i < curr_num_children; ++i) { out << ((i == 0) ? '(' : ','); print_newick(out, curr_children[i], false); }
-    if(curr_num_children != 0) { out << ')'; }
+    auto it_begin = children_begin(node); auto it_end = children_end();
+    for(auto it = it_begin; it != it_end; ++it) { out << ((it == it_begin) ? '(' : ','); print_newick(out, *it, false); }
+    if(!is_leaf(node)) { out << ')'; }
     if(label.size() != 0) { out << label[node]; }
     if(length.size() != 0) { out << ':' << length[node]; }
     if(print_semicolon) { out << ';'; }
@@ -341,206 +385,108 @@ CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
     return NULL_NODE; // shouldn't ever reach here
 }
 
-// helper function to create new node and add as child to parent
-CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node) {
-    tmp_node = parent.size();                        // `tmp_node` = new child node
-    parent.emplace_back(parent_node);                // `parent[tmp_node]` = parent of new node (which is `parent_node`)
-    children.emplace_back(std::vector<CT_NODE_T>()); // `children[tmp_node]` = children of new node (currently empty)
-    if(length.size() != 0) {
-        length.emplace_back((CT_LENGTH_T)0);         // `length[tmp_node]` = incident edge length of new node (currently 0)
-    }
-    if(label.size() != 0) {
-        label.emplace_back("");                      // `label[tmp_node]` = label of new node (currently nothing)
-    }
-    children[parent_node].emplace_back(tmp_node);    // add `tmp_node` as a new child of `parent_node`
-    return tmp_node;
-}
-
 // extract a subtree
 compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
     compact_tree new_tree; std::stack<std::pair<CT_NODE_T, CT_NODE_T>> to_copy; to_copy.push(std::make_pair(node,0)); // first = old tree; second = new tree
-    bool has_lengths = (length.size() != 0); bool has_labels = (label.size() != 0);
-    new_tree.parent.emplace_back(NULL_NODE); new_tree.children.emplace_back(std::vector<CT_NODE_T>());
-    if(has_lengths) { new_tree.length.emplace_back((CT_LENGTH_T)0.); }
-    if(has_labels) { new_tree.label.emplace_back(""); }
-    std::pair<CT_NODE_T, CT_NODE_T> curr; size_t tmp_num_children_old; size_t tmp_ind_old;
+    bool has_lengths = (length.size() != 0); bool has_labels = (label.size() != 0); auto it_end = children_end();
+    new_tree.parent.emplace_back(NULL_NODE); new_tree.children.emplace_back(std::make_pair(NULL_NODE,NULL_NODE));
+    if(has_lengths) { new_tree.length.emplace_back(ZERO_LENGTH); }
+    if(has_labels) { new_tree.label.emplace_back(EMPTY_STRING); }
+    std::pair<CT_NODE_T, CT_NODE_T> curr;
     while(!to_copy.empty()) {
-        curr = to_copy.top(); to_copy.pop(); std::vector<CT_NODE_T> & children_old = children[curr.first]; tmp_num_children_old = children_old.size();
+        curr = to_copy.top(); to_copy.pop();
         if(has_lengths) { new_tree.length[curr.second] = length[curr.first]; }
         if(has_labels) { new_tree.label[curr.second] = label[curr.first]; }
-        for(tmp_ind_old = 0; tmp_ind_old < tmp_num_children_old; ++tmp_ind_old) {
-            to_copy.push(std::make_pair(children_old[tmp_ind_old], new_tree.create_child(curr.second)));
+        for(auto it = children_begin(curr.first); it != it_end; ++it) {
+            to_copy.push(std::make_pair(*it, new_tree.create_child(curr.second, has_labels, has_lengths)));
         }
     }
     return new_tree;
 }
 
+// helper function to create a child (doesn't update child stuff in parent!!!)
+CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node, bool store_labels, bool store_lengths) {
+    parent.emplace_back(parent_node); children.emplace_back(std::make_pair(NULL_NODE, NULL_NODE));
+    if(store_labels) { label.emplace_back(EMPTY_STRING); }
+    if(store_lengths) { length.emplace_back(ZERO_LENGTH); }
+    return parent.size() - 1;
+}
+
 // compact_tree constructor (putting it last because it's super long)
 compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool store_lengths, size_t reserve) {
     // reserve space up-front (if given `reserve`) to reduce resizing (save time)
-    if(reserve != 0) { parent.reserve(reserve); if(store_lengths) { length.reserve(reserve); } if(store_labels) { label.reserve(reserve); } }
-
-    // set up file input: https://stackoverflow.com/a/17925143/2134991
-    int fd = -1;
-    size_t bytes_read = 0; size_t i;              // variables to help with reading
-    char read_buf[IO_BUFFER_SIZE + 1];            // buffer for reading
-    char str_buf[STR_BUFFER_SIZE] = {}; size_t str_buf_i = 0; // helper string buffer
-    char* buf;                                    // either read_buf (if reading from file) or the C string (if reading Newick string)
-    if(is_fn) {
-        fd = open(input, O_RDONLY);
-        if(fd == -1) {
-            throw std::invalid_argument(ERROR_OPENING_FILE + ": " + input);
-        }
-        posix_fadvise(fd, 0, 0, 1);               // FDADVICE_SEQUENTIAL
-        buf = read_buf;
-    } else {
-        bytes_read = strlen(input);
-        buf = input;
+    if(reserve != 0) {
+        parent.reserve(reserve); children.reserve(reserve);
+        if(store_lengths) { length.reserve(reserve); }
+        if(store_labels) { label.reserve(reserve); }
     }
 
-    // set up root node (initially empty/blank)
-    parent.emplace_back(NULL_NODE);
-    children.emplace_back(std::vector<CT_NODE_T>());
-    if(store_lengths) { length.emplace_back((CT_LENGTH_T)0); }
-    if(store_labels) { label.emplace_back(""); }
+    // load entire Newick string up-front
+    std::string newick;
+    if(is_fn) {
+        std::ifstream in(input); std::getline(in >> std::ws, newick);
+    } else {
+        std::istringstream in(input); std::getline(in >> std::ws, newick);
+    }
+    size_t newick_len = newick.length();
 
-    // set up initial Newick parsing state
-    CT_NODE_T curr_node = 0;         // start at root node (0)
-    bool parse_length = false;       // parsing a length right now?
-    bool parse_label = false;        // parsing a label right now?
-    bool parse_label_single = false; // parsing a single-quote label right now?
-    bool parse_label_double = false; // parsing a double-quote label right now?
-    bool parse_comment = false;      // parsing a comment [...] right now?
+    // preprocess Newick string: find each the "next" index of each '(' or ','
+    std::unordered_map<size_t, size_t> newick_next; std::vector<size_t> curr_left; size_t newick_semicolon_ind = 0;
+    for(size_t i = 0; i < newick_len; ++i) {
+        switch(newick[i]) {
+            case '(':
+                curr_left.emplace_back(i); break;
+            case ',':
+                newick_next[curr_left.back()] = i; curr_left.back() = i; break;
+            case ')':
+                newick_next[curr_left.back()] = i; curr_left.pop_back(); break;
+            case ';':
+                newick_semicolon_ind = i; break;
+            default:
+                break;
+        };
+    }
+    if(!curr_left.empty() || newick_semicolon_ind == 0) {
+        throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+    }
 
-    // read Newick tree byte-by-byte
-    while(true) {
-        // either read from file or from Newick C string
-        if(is_fn) {
-            bytes_read = read(fd, buf, IO_BUFFER_SIZE);
-        } else {
-            buf = input;
+    // trim terminating whitespace and ';'
+    for(size_t i = newick_semicolon_ind; i < newick_len; ++i) {
+        newick.pop_back(); // should be O(1)
+    }
+    newick_len = newick.length(); // recalculate updated length
+
+    // parse Newick string in level-order
+    std::queue<std::pair<size_t, CT_NODE_T>> to_visit; to_visit.emplace(std::make_pair(0, ROOT_NODE));
+    create_child(NULL_NODE, store_labels, store_lengths); std::pair<size_t, CT_NODE_T> curr_pair; size_t tmp_ind; CT_NODE_T tmp_node; std::string tmp_s;
+    while(!to_visit.empty()) {
+        // get next node and add all of its children to the queue
+        curr_pair = to_visit.front(); to_visit.pop(); tmp_ind = curr_pair.first;
+        while(newick[tmp_ind] == ',' || newick[tmp_ind] == '(') {
+            tmp_node = create_child(curr_pair.second, store_labels, store_lengths); children[curr_pair.second].second = tmp_node;
+            if(children[curr_pair.second].first == NULL_NODE) { children[curr_pair.second].first = tmp_node; }
+            to_visit.emplace(std::make_pair(tmp_ind+1, tmp_node)); tmp_ind = newick_next[tmp_ind];
         }
 
-        // handle done reading (!bytes_read) and read failed (bytes_read == -1)
-        if(!bytes_read || bytes_read == (size_t)(-1)) {
-            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
-        }
+        // parse label and edge
+        if(store_labels || store_lengths) {
+            if(newick[tmp_ind] == ')') { ++tmp_ind; }
 
-        // iterate over the characters in the buffer
-        for(i = 0; i < bytes_read; ++i) {
-            // currently parsing a comment (ignore for now)
-            if(parse_comment) {
-                // reached end of comment
-                if(buf[i] == ']') {
-                    parse_comment = false;
+            // parse label (if it exists)
+            if(store_labels) {
+                while(tmp_ind < newick_len && newick[tmp_ind] != ':' && newick[tmp_ind] != ',' && newick[tmp_ind] != ')' && newick[tmp_ind] != ';') {
+                    label[curr_pair.second] += newick[tmp_ind++];
                 }
             }
 
-            // currently parsing an edge length
-            else if(parse_length) {
-                switch(buf[i]) {
-                    // finished parsing edge length
-                    case ',':
-                    case ')':
-                    case ';':
-                        if(store_lengths) { str_buf[str_buf_i] = (char)0; length[curr_node] = PARSE_LENGTH_FROM_C_STR(str_buf); }
-                        parse_length = false; --i; break; // need to re-read this character
-
-                    // edge comment (ignore for now)
-                    case '[':
-                        parse_comment = true; break;
-
-                    // character within edge length
-                    default:
-                        if(store_lengths) { str_buf[str_buf_i++] = buf[i]; }
-                        break;
+            // parse edge length (if it exists)
+            if(store_lengths) {
+                tmp_s.clear(); if(newick[tmp_ind] == ':') { ++tmp_ind; }
+                while(tmp_ind < newick_len && newick[tmp_ind] != ',' && newick[tmp_ind] != ')' && newick[tmp_ind] != ';') {
+                    tmp_s += newick[tmp_ind++];
                 }
-            }
-
-            // currently parsing a node label
-            else if(parse_label) {
-                // parsing quoted label ('' or ""), so blindly add next char to label
-                if(parse_label_single || parse_label_double) {
-                    if(store_labels) { str_buf[str_buf_i++] = buf[i]; }
-                    if(buf[i] == '\'' && parse_label_single) {
-                        parse_label = false; parse_label_single = false;
-                    } else if(buf[i] == '"' && parse_label_double) {
-                        parse_label = false; parse_label_double = false;
-                    }
-                }
-
-                // parsing non-quoted label, so check next char for validity before adding
-                else {
-                    switch(buf[i]) {
-                        case ':': case ',': case ')': case ';':
-                            parse_label = false; --i; break; // finished label, so need to re-read this character
-                        default:
-                            if(store_labels) { str_buf[str_buf_i++] = buf[i]; } break;
-                    }
-                }
-
-                // if we finished parsing the label, finalize it
-                if(!parse_label) {
-                    if(store_labels) { str_buf[str_buf_i] = (char)0; label[curr_node] = str_buf; }
-                    parse_label = false;
-                }
-            }
-
-            // all other symbols
-            else {
-                switch(buf[i]) {
-                    // ignore spaces outside of labels
-                    case ' ':
-                        break;
-
-                    // end of Newick string
-                    case ';':
-                        if(curr_node != (CT_NODE_T)0) {
-                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
-                        }
-                        return;
-
-                    // go to new child
-                    case '(':
-                        if(curr_node == NULL_NODE) {
-                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
-                        }
-                        curr_node = create_child(curr_node); break;
-
-                    // go to parent
-                    case ')':
-                        curr_node = parent[curr_node]; break;
-
-                    // go to new sibling
-                    case ',':
-                        if((curr_node == NULL_NODE) || (parent[curr_node] == NULL_NODE)) {
-                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
-                        }
-                        curr_node = create_child(parent[curr_node]); break;
-
-                    // node comment (ignore for now)
-                    case '[':
-                        parse_comment = true; break;
-
-                    // edge length
-                    case ':':
-                        if(store_lengths) { str_buf_i = 0; }
-                        parse_length = true; break;
-
-                    // about to parse a node label in single quotes ('')
-                    case '\'':
-                        if(store_labels) { str_buf_i = 0; }
-                        parse_label = true; parse_label_single = true; break;
-
-                    // about to parse a node label in double quotes ("")
-                    case '"':
-                        if(store_labels) { str_buf_i = 0; }
-                        parse_label = true; parse_label_double = true; break;
-
-                    // about to start a node label without quotes
-                    default:
-                        if(store_labels) { str_buf_i = 0; }
-                        parse_label = true; --i; break; // need to re-read this character (it's part of the label)
+                if(tmp_s.length() != 0) {
+                    length[curr_pair.second] = PARSE_LENGTH_FROM_STRING(tmp_s);
                 }
             }
         }

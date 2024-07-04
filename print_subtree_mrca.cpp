@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
     std::cout << "Original:" << std::endl;
     tree.print_newick(std::cout);
     CT_NODE_T last_node = tree.get_num_nodes() - 1;
-    compact_tree subtree = tree.extract_subtree_mrca({last_node, last_node-1});
+    compact_tree subtree = tree.extract_subtree(tree.find_mrca({last_node, last_node-1}));
     std::cout << std::endl << std::endl << "Subtree:" << std::endl;
     subtree.print_newick(std::cout);
     std::cout << std::endl;
