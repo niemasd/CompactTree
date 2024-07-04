@@ -434,6 +434,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
     }
 
     // preprocess Newick string: find each the "next" index of each '(' or ','
+    // TODO maybe instead of preallocating newick_next, I can have the "next" pointers actually be a Linked List?
     std::vector<size_t> newick_next(newick_len+1, 0); std::vector<size_t> curr_left; size_t newick_semicolon_ind = 0;
     for(size_t i = 0; i < newick_len; ++i) {
         switch(newick[i]) {
@@ -460,7 +461,8 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
         // get next node and add all of its children to the queue
         curr_pair = to_visit.front(); to_visit.pop(); tmp_ind = curr_pair.first;
         while(newick[tmp_ind] == ',' || newick[tmp_ind] == '(') {
-            tmp_node = create_child(curr_pair.second, store_labels, store_lengths); children[curr_pair.second].second = tmp_node;
+            tmp_node = create_child(curr_pair.second, store_labels, store_lengths);
+            children[curr_pair.second].second = tmp_node;
             if(children[curr_pair.second].first == NULL_NODE) { children[curr_pair.second].first = tmp_node; }
             to_visit.emplace(std::make_pair(tmp_ind+1, tmp_node)); tmp_ind = newick_next[tmp_ind];
         }
