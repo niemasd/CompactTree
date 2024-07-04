@@ -413,6 +413,20 @@ CT_NODE_T compact_tree::create_child(const CT_NODE_T parent_node, bool store_lab
     return parent.size() - 1;
 }
 
+// helper function TODO DELETE
+void print(std::queue<std::pair<size_t, size_t>> q) {
+    while(!q.empty()) {
+        std::cout << '(' << q.front().first << ',' << q.front().second << ") "; q.pop();
+    }
+    std::cout << std::endl;
+}
+void print(std::queue<size_t> q) {
+    while(!q.empty()) {
+        std::cout << q.front() << ' '; q.pop();
+    }
+    std::cout << std::endl;
+}
+
 // compact_tree constructor (putting it last because it's super long)
 compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool store_lengths, size_t reserve) {
     // reserve space up-front (if given `reserve`) to reduce resizing (save time)
@@ -434,29 +448,45 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
     }
 
     // preprocess Newick string: find each the "next" index of each '(' or ','
-    // TODO maybe instead of preallocating newick_next, I can have the "next" pointers actually be a Linked List?
-    std::vector<size_t> newick_next(newick_len+1, 0); std::vector<size_t> curr_left; size_t newick_semicolon_ind = 0;
+    std::vector<std::queue<std::pair<size_t,size_t>>> level_queues; // level_queues[i] is a queue of (newick_ind, parent_newick_ind) tuples
+
+    /**
+     * TODO I'm giving on this "children of node x are contiguous" idea because it's much more difficult to do without a large up-front memory cost
+     * TODO I'll commit this code so I have a snapshot of it if I want to revisit this in the future
+     */
+
+    size_t curr_level = (size_t)(-1); size_t newick_semicolon_ind = 0;
     for(size_t i = 0; i < newick_len; ++i) {
         switch(newick[i]) {
             case '(':
-                curr_left.emplace_back(i); break;
+                //curr_left.emplace_back(i); break;
+                if(++curr_level >= level_queues.size()) {
+                    level_queues.emplace_back(std::queue<std::pair<size_t,size_t>>());
+                } // intentionally waterfall
             case ',':
-                newick_next[curr_left.back()] = i; curr_left.back() = i; break;
+                //newick_next[curr_left.back()] = i; curr_left.back() = i; break;
+                level_queues[curr_level].emplace(std::make_pair(i,(curr_level == 0) ? (size_t)(-1) : level_queues[curr_level-1].back().first)); break;
             case ')':
-                newick_next[curr_left.back()] = i; curr_left.pop_back(); break;
+                //newick_next[curr_left.back()] = i; curr_left.pop_back(); break;
+                level_queues[curr_level].emplace(std::make_pair(i,(curr_level == 0) ? (size_t)(-1) : level_queues[curr_level-1].back().first)); --curr_level; break;
             case ';':
                 newick_semicolon_ind = i; break;
             default:
                 break;
         };
     }
-    if(!curr_left.empty() || newick_semicolon_ind == 0) {
+    if(curr_level != (size_t)(-1) || newick_semicolon_ind == 0) {
         throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+    }
+    std::cout << newick << std::endl; // TODO DELETE
+    for(std::queue<std::pair<size_t,size_t>> & q : level_queues) {
+        std::cout << "LEVEL: "; print(q);
     }
 
     // parse Newick string in level-order
-    std::queue<std::pair<size_t, CT_NODE_T>> to_visit; to_visit.emplace(std::make_pair(0, ROOT_NODE));
+    //std::queue<std::pair<size_t, CT_NODE_T>> to_visit; to_visit.emplace(std::make_pair(0, ROOT_NODE));
     create_child(NULL_NODE, store_labels, store_lengths); std::pair<size_t, CT_NODE_T> curr_pair; size_t tmp_ind; CT_NODE_T tmp_node; std::string tmp_s;
+    /* TODO
     while(!to_visit.empty()) {
         // get next node and add all of its children to the queue
         curr_pair = to_visit.front(); to_visit.pop(); tmp_ind = curr_pair.first;
@@ -464,7 +494,8 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
             tmp_node = create_child(curr_pair.second, store_labels, store_lengths);
             children[curr_pair.second].second = tmp_node;
             if(children[curr_pair.second].first == NULL_NODE) { children[curr_pair.second].first = tmp_node; }
-            to_visit.emplace(std::make_pair(tmp_ind+1, tmp_node)); tmp_ind = newick_next[tmp_ind];
+            to_visit.emplace(std::make_pair(tmp_ind+1, tmp_node));
+            //tmp_ind = newick_next[tmp_ind]; // TODO REPLACE WITH NEW REPRESENTATION
         }
 
         // parse label and edge
@@ -490,5 +521,6 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
             }
         }
     }
+    */
 }
 #endif
