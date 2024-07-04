@@ -7,6 +7,7 @@
 
 // include statements
 #include <cstdint>       // std::uint32_t, std::uint64_t
+#include <cstdio>        // fopen
 #include <cstdlib>       // std::atof
 #include <cstring>       // strcmp()
 #include <fstream>       // std::ifstream
@@ -422,16 +423,18 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
     }
 
     // load entire Newick string up-front
-    std::string newick;
+    char* newick; size_t newick_size = 0; size_t newick_len = 0;
     if(is_fn) {
-        std::ifstream in(input); std::getline(in >> std::ws, newick);
+        //std::ifstream in(input, std::ios_base::ate); int len = in.tellg(); in.seekg(0, std::ios_base::beg);
+        //newick.reserve(len+1); std::getline(in >> std::ws, newick);
+        FILE* in = fopen(input, "r"); newick_len = getline(&newick, &newick_size, in);
     } else {
-        std::istringstream in(input); std::getline(in >> std::ws, newick);
+        //std::istringstream in(input); std::getline(in >> std::ws, newick);
+        newick = input; newick_len = strlen(newick);
     }
-    size_t newick_len = newick.length();
 
     // preprocess Newick string: find each the "next" index of each '(' or ','
-    std::unordered_map<size_t, size_t> newick_next; std::vector<size_t> curr_left; size_t newick_semicolon_ind = 0;
+    std::vector<size_t> newick_next(newick_len+1, 0); std::vector<size_t> curr_left; size_t newick_semicolon_ind = 0;
     for(size_t i = 0; i < newick_len; ++i) {
         switch(newick[i]) {
             case '(':
@@ -449,12 +452,6 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
     if(!curr_left.empty() || newick_semicolon_ind == 0) {
         throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
     }
-
-    // trim terminating whitespace and ';'
-    for(size_t i = newick_semicolon_ind; i < newick_len; ++i) {
-        newick.pop_back(); // should be O(1)
-    }
-    newick_len = newick.length(); // recalculate updated length
 
     // parse Newick string in level-order
     std::queue<std::pair<size_t, CT_NODE_T>> to_visit; to_visit.emplace(std::make_pair(0, ROOT_NODE));
@@ -474,7 +471,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
 
             // parse label (if it exists)
             if(store_labels) {
-                while(tmp_ind < newick_len && newick[tmp_ind] != ':' && newick[tmp_ind] != ',' && newick[tmp_ind] != ')' && newick[tmp_ind] != ';') {
+                while(tmp_ind < newick_semicolon_ind && newick[tmp_ind] != ':' && newick[tmp_ind] != ',' && newick[tmp_ind] != ')') {
                     label[curr_pair.second] += newick[tmp_ind++];
                 }
             }
@@ -482,7 +479,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
             // parse edge length (if it exists)
             if(store_lengths) {
                 tmp_s.clear(); if(newick[tmp_ind] == ':') { ++tmp_ind; }
-                while(tmp_ind < newick_len && newick[tmp_ind] != ',' && newick[tmp_ind] != ')' && newick[tmp_ind] != ';') {
+                while(tmp_ind < newick_semicolon_ind && newick[tmp_ind] != ',' && newick[tmp_ind] != ')') {
                     tmp_s += newick[tmp_ind++];
                 }
                 if(tmp_s.length() != 0) {
