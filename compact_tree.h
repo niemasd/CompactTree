@@ -99,7 +99,7 @@ class compact_tree {
 
         /**
          * Copy constructor
-         * @param `o` The other `compact_tree` to copy
+         * @param o The other `compact_tree` to copy
          */
         compact_tree(const compact_tree & o) : parent(o.parent), children(o.children), label(o.label), length(o.length), num_leaves(o.num_leaves) {}
 
@@ -335,8 +335,8 @@ class compact_tree {
 
         /**
          * Calculate the (weighted) distance between two nodes
-         * @param `u` The first node
-         * @param `v` The second node
+         * @param u The first node
+         * @param v The second node
          * @return The (weighted) distance between `u` and `v`
          */
         double calc_dist(CT_NODE_T u, CT_NODE_T v) {
