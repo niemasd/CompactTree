@@ -7,7 +7,15 @@ Just download [`compact_tree.h`](compact_tree.h) into your C++ code base, add `#
 ### Example Programs
 To demonstrate CompactTree's use, we provide a series of simple example programs:
 
-* **[`load_tree.cpp`](load_tree.cpp)** - Just load a tree
+* **[`load_tree.cpp`](load_tree.cpp)** - Load a tree from a file
+* **[`load_tree_string.cpp`](load_tree_string.cpp)** - Load a tree from a Newick string
+* **[`copy_tree.cpp`](copy_tree.cpp)** - Copy a tree (showcases copy constructor)
+* **[`print_topology.cpp`](print_topology.cpp)** - Print the topology of a tree without labels/lengths (showcases memory-efficient way to load a tree by ignoring labels/lengths)
 * **[`print_stats.cpp`](print_stats.cpp)** - Print statistics about a tree
 * **[`print_root_dists.cpp`](print_root_dists.cpp)** - Print the root distances of the labeled nodes in the tree (showcases preorder traversal)
 * **[`print_num_descendants.cpp`](print_num_descendants.cpp)** - Print the number of descendants of each labeled node in the tree (showcases postorder traversal)
+* **[`print_distances.cpp`](print_distances.cpp)** - Print all pairwise distances (showcases pairwise distance calculation)
+    * This currently calculates each *individual* pairwise distance one-by-one to showcase that specific functionality
+    * This will soon be updated to *also* include a more efficient function to calculate *all* pairwise distances in a single post-order traversal
+* **[`print_mrca.cpp`](print_mrca.cpp)** - Print the Most Recent Common Ancestor (MRCA) of two nodes in the tree (showcases finding MRCA)
+* **[`print_subtree_mrca.cpp`](print_subtree_mrca.cpp)** - Extract and print the subtree rooted at the MRCA of two nodes in the tree (showcases subtree extraction)
