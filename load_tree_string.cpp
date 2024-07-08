@@ -13,15 +13,12 @@ int main(int argc, char** argv) {
 
     // load file into string
     std::ifstream infile(argv[1]);
-    std::string tree_string; std::string line;
-    while(getline(infile, line)) {
-        tree_string += line;
-    }
-    char* tree_string_cstring = &tree_string[0];
+    std::string tree_string;
+    getline(infile, tree_string);
 
     // load compact_tree
     auto start = std::chrono::system_clock::now();
-    compact_tree tree(tree_string_cstring, false);
+    compact_tree tree(tree_string, false);
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "Loaded tree with " << tree.get_num_nodes() << " nodes in " << elapsed.count() << " seconds" << std::endl;
