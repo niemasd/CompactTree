@@ -2,6 +2,7 @@
 copy_tree
 load_tree
 load_tree_string
+print_distance_matrix
 print_distances
 print_mrca
 print_num_descendants

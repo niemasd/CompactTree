@@ -14,6 +14,7 @@
 #include <stack>         // std::stack
 #include <stdexcept>     // std::invalid_argument
 #include <string>        // std::string
+#include <tuple>         // std::tuple
 #include <unistd.h>      // read()
 #include <unordered_map> // std::unordered_map
 #include <unordered_set> // std::unordered_set
@@ -233,7 +234,7 @@ class compact_tree {
                 CT_NODE_T operator*() { return node; }
         };
         preorder_iterator preorder_begin() { return preorder_iterator(ROOT_NODE); }
-        preorder_iterator preorder_end() { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
+        preorder_iterator preorder_end () { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
 
         /**
          * Postorder traversal iterator. The only guarantee is that a node will be visited before its parent
@@ -294,7 +295,7 @@ class compact_tree {
          * @param nodes The nodes to find the MRCA of
          * @return The MRCA of the nodes in `nodes`
          */
-        CT_NODE_T find_mrca(const std::unordered_set<CT_NODE_T> & nodes);
+        CT_NODE_T find_mrca(const std::unordered_set<CT_NODE_T> & nodes) const;
 
         /**
          * Extract the subtree rooted at a given node
@@ -309,7 +310,7 @@ class compact_tree {
          * @param include_leaves `true` to include leaves, otherwise `false`
          * @return The total branch length of this tree
          */
-        double calc_total_bl(bool include_internal = true, bool include_leaves = true) {
+        double calc_total_bl(bool include_internal = true, bool include_leaves = true) const {
             if(!(include_internal || include_leaves)) { return 0.; }
             double tot = 0; CT_NODE_T num_nodes = get_num_nodes();
             for(CT_NODE_T node = 0; node < num_nodes; ++node) {
@@ -325,12 +326,14 @@ class compact_tree {
          * @param include_leaves `true` to include leaves, otherwise `false`
          * @return The average branch length of this tree
          */
-        double calc_avg_bl(bool include_internal = true, bool include_leaves = true) {
+        double calc_avg_bl(bool include_internal = true, bool include_leaves = true) const {
             if(!(include_internal || include_leaves)) { return 0.; }
-            double tot = calc_total_bl(include_internal, include_leaves); CT_NODE_T den = 0;
-            if(include_internal) { den += get_num_internal(); }
-            if(include_leaves) { den += get_num_leaves(); }
-            return tot / den;
+            double tot = 0; CT_NODE_T num_nodes = get_num_nodes(); CT_NODE_T count = 0;
+            for(CT_NODE_T node = 0; node < num_nodes; ++node) {
+                if(is_leaf(node)) { if(include_leaves) { tot += get_edge_length(node); ++count; } }
+                else { if(include_internal) { tot += get_edge_length(node); ++count; } }
+            }
+            return tot / count;
         }
 
         /**
@@ -339,13 +342,19 @@ class compact_tree {
          * @param v The second node
          * @return The (weighted) distance between `u` and `v`
          */
-        double calc_dist(CT_NODE_T u, CT_NODE_T v) {
+        double calc_dist(CT_NODE_T u, CT_NODE_T v) const {
             if(u == v) { return 0.; } if(u == parent[v]) { return get_edge_length(v); } if(v == parent[u]) { return get_edge_length(u); }
             std::unordered_map<CT_NODE_T, double> u_dists; std::unordered_map<CT_NODE_T, double> v_dists; CT_NODE_T c = u; CT_NODE_T p = parent[c]; std::unordered_map<CT_NODE_T, double>::iterator it;
             while(p != NULL_NODE) { u_dists[p] = u_dists[c] + get_edge_length(c); c = p; p = parent[p]; } c = v; p = parent[c];
             while(p != NULL_NODE) { v_dists[p] = v_dists[c] + get_edge_length(c); it = u_dists.find(p); if(it != u_dists.end()) { return it->second + v_dists[p]; } c = p; p = parent[p]; }
             return -1.; // error, shouldn't reach here
         }
+
+        /**
+         * Calculate the (weighted) distance matrix between all pairs of leaves
+         * @return A `vector<tuple>` containing all pairwise leaf distances as `(u, v, distance)`
+         */
+        std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> calc_distance_matrix();
 };
 
 // print Newick string (currently recursive)
@@ -359,7 +368,7 @@ void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool print_s
 }
 
 // find the MRCA of nodes
-CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
+CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) const {
     std::queue<CT_NODE_T, std::deque<CT_NODE_T>> to_visit(std::deque<CT_NODE_T>(nodes.begin(), nodes.end()));
     std::unordered_map<CT_NODE_T, CT_NODE_T> count; std::unordered_map<CT_NODE_T, CT_NODE_T>::iterator count_it;
     CT_NODE_T curr_node; CT_NODE_T curr_parent; size_t total = nodes.size();
@@ -376,6 +385,55 @@ CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) {
         }
     }
     return NULL_NODE; // shouldn't ever reach here
+}
+
+// calculate distance matrix
+std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> compact_tree::calc_distance_matrix() {
+    // set things up
+    const size_t N = get_num_leaves(); const size_t N_MINUS_1 = N - 1;
+    const size_t N_CHOOSE_2 = ((N%2) == 0) ? ((N/2) * N_MINUS_1) : ((N_MINUS_1/2) * N);
+    std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> dm; dm.reserve(N_CHOOSE_2);
+    std::unordered_map<CT_NODE_T, std::unordered_map<CT_NODE_T, double>*> leaf_dists;
+    postorder_iterator it_end = postorder_end();
+    children_iterator ch_it = children_begin(ROOT_NODE); children_iterator ch_it_2 = children_begin(ROOT_NODE); children_iterator ch_it_end = children_end(ROOT_NODE);
+    CT_NODE_T curr; CT_NODE_T child; CT_NODE_T child_2; std::unordered_map<CT_NODE_T, double>* curr_leaf_dists;
+    std::unordered_map<CT_NODE_T, double>* child_leaf_dists; std::unordered_map<CT_NODE_T, double>::iterator dist_it; std::unordered_map<CT_NODE_T, double>::iterator dist_it_end;
+    std::unordered_map<CT_NODE_T, double>* child_leaf_dists_2; std::unordered_map<CT_NODE_T, double>::iterator dist_it_2; std::unordered_map<CT_NODE_T, double>::iterator dist_it_2_end;
+
+    // calculate pairwise distances
+    for(postorder_iterator it = postorder_begin(); it != it_end; ++it) {
+        curr = *it; curr_leaf_dists = new std::unordered_map<CT_NODE_T, double>(); leaf_dists.emplace(curr, curr_leaf_dists);
+        // for leaves, they have 0 distance to themselves
+        if(is_leaf(curr)) {
+            curr_leaf_dists->emplace(curr, (double)0.);
+        }
+
+        // for internal nodes:
+        else {
+            // calculate all pairwise distances between leaves below this node
+            for(ch_it = children_begin(curr), ch_it_end = children_end(curr); std::next(ch_it) != ch_it_end; ++ch_it) {
+                child = *ch_it; child_leaf_dists = leaf_dists[child];
+                for(ch_it_2 = std::next(ch_it); ch_it_2 != ch_it_end; ++ch_it_2) {
+                    child_2 = *ch_it_2; child_leaf_dists_2 = leaf_dists[child_2];
+                    for(dist_it = child_leaf_dists->begin(), dist_it_end = child_leaf_dists->end(); dist_it != dist_it_end; ++dist_it) {
+                        for(dist_it_2 = child_leaf_dists_2->begin(), dist_it_2_end = child_leaf_dists_2->end(); dist_it_2 != dist_it_2_end; ++dist_it_2) {
+                            dm.emplace_back(std::make_tuple(dist_it->first, dist_it_2->first, dist_it->second + dist_it_2->second + get_edge_length(child) + get_edge_length(child_2)));
+                        }
+                    }
+                }
+            }
+
+            // calculate leaf distances to this node
+            for(ch_it = children_begin(curr), ch_it_end = children_end(curr); ch_it != ch_it_end; ++ch_it) {
+                child = *ch_it; child_leaf_dists = leaf_dists[child];
+                for(dist_it = child_leaf_dists->begin(), dist_it_end = child_leaf_dists->end(); dist_it != dist_it_end; ++dist_it) {
+                    curr_leaf_dists->emplace(dist_it->first, dist_it->second + length[child]);
+                }
+                delete child_leaf_dists;
+            }
+        }
+    }
+    delete leaf_dists[ROOT_NODE]; return dm;
 }
 
 // helper function to create new node and add as child to parent

@@ -1,5 +1,5 @@
 /**
- * Print all pair distances of leaves in the tree to showcase leaf iteration and pairwise distance calculation
+ * Print all pairwise distances of leaves in the tree to showcase leaf iteration and pairwise distance calculation
  */
 #include <iostream>
 #include <string>
