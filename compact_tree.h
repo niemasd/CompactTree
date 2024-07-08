@@ -109,17 +109,6 @@ class compact_tree {
         compact_tree(std::string & input, bool is_fn = true, bool store_labels = true, bool store_lengths = true, size_t reserve = 0) : compact_tree(&input[0], is_fn, store_labels, store_lengths, reserve) {}
 
         /**
-         * Load a tree from an `istream`
-         * @param input The `istream` from which to load the tree
-         * @param store_labels `true` to store node labels (default), otherwise `false` (saves memory)
-         * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
-         * @param reserve How many nodes to reserve memory for up-front to avoid `std::vector` resizes. It's fine if the true number of nodes in the tree exceeds this value (the `std::vector` will resize automatically), but get as close as possible for speed.
-         */
-        compact_tree(std::istream input, bool store_labels = true, bool store_lengths = true, size_t reserve = 0) {
-            // TODO
-        }
-
-        /**
          * Copy constructor
          * @param o The other `compact_tree` to copy
          */
