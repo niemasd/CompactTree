@@ -40,7 +40,7 @@
 #endif
 
 // general constants
-#define VERSION "0.0.2"
+#define COMPACTTREE_VERSION "0.0.2"
 #define IO_BUFFER_SIZE 16384
 #define STR_BUFFER_SIZE 16384
 const std::string EMPTY_STRING = "";
