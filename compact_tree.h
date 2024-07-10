@@ -229,6 +229,21 @@ class compact_tree {
         const std::vector<std::string> & get_labels() const { return label; }
 
         /**
+         * Replace all labels that match a user-provided mapping
+         * @param label_map A mapping where keys are old labels and values are new labels (i.e., replace all occurrences of label `s` with `label_map[s]`)
+         * @param include_internal `true` to include internal nodes in the label replacement, otherwise `false` to only replace leaf labels
+         */
+        void replace_labels(const std::unordered_map<std::string, std::string> & label_map, bool include_internal = true) {
+            const size_t NUM_NODES = get_num_nodes(); CT_NODE_T curr; auto it = label_map.end(); auto it_end = label_map.end();
+            for(curr = ROOT_NODE; curr < NUM_NODES; ++curr) {
+                if(is_leaf(curr) || include_internal) {
+                    it = label_map.find(label[curr]);
+                    if(it != it_end) { label[curr] = it->second; }
+                }
+            }
+        }
+
+        /**
          * Preorder traversal iterator. The only guarantee is that a node will be visited before its children
          */
         class preorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
