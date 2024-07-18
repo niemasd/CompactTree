@@ -22,3 +22,8 @@ To demonstrate CompactTree's use, we provide a series of simple example programs
     * This calculates *all* pairwise distances in a single post-order traversal
 * **[`print_mrca.cpp`](print_mrca.cpp)** - Print the Most Recent Common Ancestor (MRCA) of two nodes in the tree (showcases finding MRCA)
 * **[`print_subtree_mrca.cpp`](print_subtree_mrca.cpp)** - Extract and print the subtree rooted at the MRCA of two nodes in the tree (showcases subtree extraction)
+
+## Citing CompactTree
+If you use CompactTree in your work, please cite:
+
+> **Moshiri N** (2024). "CompactTree: A lightweight header-only C++ library for ultra-large phylogenetics." *bioRxiv*. [doi:10.1101/2024.07.15.603593](https://doi.org/10.1101/2024.07.15.603593)
