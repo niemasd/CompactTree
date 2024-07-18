@@ -6,6 +6,11 @@ Just download [`compact_tree.h`](compact_tree.h) into your C++ code base, add `#
 
 http://niema.net/CompactTree
 
+By default, CompactTree represents nodes (type `CT_NODE_T`) as 32-bit unsigned integers ([`std::uint32_t`](https://cplusplus.com/reference/cstdint/)), and it represents edge lengths (type `CT_LENGTH_T`) using the `float` type, but these can be overridden via compilation arguments:
+
+* `-DCT_NODE_64` will define `CT_NODE_T` as a 64-bit unsigned integer ([`std::uint64_t`](https://cplusplus.com/reference/cstdint/))
+* `CT_LENGTH_DOUBLE` will define `CT_LENGTH_T` as `double`
+
 ### Example Programs
 To demonstrate CompactTree's use, we provide a series of simple example programs:
 
