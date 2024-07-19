@@ -34,7 +34,7 @@ jobs:
       - name: Set up environment
         run: |
           sudo apt-get update && \
-          sudo apt-get install -y doxygen
+          sudo apt-get install -y doxygen graphviz
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Run Doxygen

@@ -2,9 +2,9 @@
 CompactTree is a header-only C++ library for loading and traversing trees. CompactTree is intended for massive trees that can't feasibly fit into memory using other packages (we otherwise recommend [TreeSwift](https://github.com/niemasd/TreeSwift)), and it is intended to be a highly-compact read-only representation of a tree. CompactTree currently only supports trees in the [Newick format](https://en.wikipedia.org/wiki/Newick_format), and it does not support complex annotations (just node labels and edge lengths).
 
 ## Usage
-Just download [`compact_tree.h`](https://github.com/niemasd/ViralMSA/releases/latest/download/compact_tree.h) into your C++ code base, add `#include "compact_tree.h"` to your code, and use the `compact_tree` class! Here's an example program that loads a Newick file passed as the first command-line argument:
+Just download [`compact_tree.h`](https://github.com/niemasd/CompactTree/releases/latest/download/compact_tree.h) into your C++ code base, add `#include "compact_tree.h"` to your code, and use the `compact_tree` class! Here's an example program that loads a Newick file passed as the first command-line argument:
 
-```c++
+```cpp
 #include "compact_tree.h"
 int main(int argc, char** argv) {
     compact_tree tree(argv[1]);
@@ -23,7 +23,7 @@ By default, CompactTree represents nodes (type `CT_NODE_T`) as 32-bit unsigned i
 * `-DCT_NODE_64` will define `CT_NODE_T` as a 64-bit unsigned integer ([`std::uint64_t`](https://cplusplus.com/reference/cstdint/))
 * `-DCT_LENGTH_DOUBLE` will define `CT_LENGTH_T` as `double`
 
-For more examples, take a look at the simple example programs in the [`example`](example) folder as well as the [Cookbook](./Cookbook). Full documentation can be found at: https://niema.net/CompactTree
+For more examples, take a look at the simple example programs in the [`example`](https://github.com/niemasd/CompactTree/tree/main/example) folder as well as the [Cookbook](https://niema.net/CompactTree/md_example_cookbook.html). Full documentation can be found at: https://niema.net/CompactTree
 
 ## Citing CompactTree
 If you use CompactTree in your work, please cite:
