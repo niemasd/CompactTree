@@ -40,7 +40,7 @@
 #endif
 
 // general constants
-#define COMPACTTREE_VERSION "0.0.2"
+#define COMPACTTREE_VERSION "0.0.3"
 #define IO_BUFFER_SIZE 16384
 #define STR_BUFFER_SIZE 16384
 const std::string EMPTY_STRING = "";
@@ -258,7 +258,16 @@ class compact_tree {
                 bool operator!=(const preorder_iterator & rhs) const { return node != rhs.node; }
                 CT_NODE_T operator*() { return node; }
         };
+        /**
+         * Return an iterator referring to the first node of a preorder traversal
+         * @return An iterator referring to the first node of a preorder traversal
+         */
         preorder_iterator preorder_begin() { return preorder_iterator(ROOT_NODE); }
+
+        /**
+         * Return an iterator referring just past the last node of a preorder traversal
+         * @return An iterator referring just past the last node of a preorder traversal
+         */
         preorder_iterator preorder_end () { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
 
         /**
@@ -276,7 +285,16 @@ class compact_tree {
                 bool operator!=(const postorder_iterator & rhs) const { return node != rhs.node; }
                 CT_NODE_T operator*() { return node; }
         };
+        /**
+         * Return an iterator referring to the first node of a postorder traversal
+         * @return An iterator referring to the first node of a postorder traversal
+         */
         postorder_iterator postorder_begin() { return postorder_iterator((CT_NODE_T)(get_num_nodes() - 1)); }
+
+        /**
+         * Return an iterator referring just past the last node of a postorder traversal
+         * @return An iterator referring just past the last node of a postorder traversal
+         */
         postorder_iterator postorder_end() { return postorder_iterator(NULL_NODE); }
 
         /**
@@ -294,7 +312,17 @@ class compact_tree {
                 bool operator!=(const leaves_iterator & rhs) const { return node != rhs.node; }
                 CT_NODE_T operator*() { return node; }
         };
+
+        /**
+         * Return an iterator referring to the first node of a leaf iteration
+         * @return An iterator referring to the first node of a leaf iteration
+         */
         leaves_iterator leaves_begin() { CT_NODE_T node = ROOT_NODE; CT_NODE_T num_nodes = get_num_nodes(); while(((++node) < num_nodes) && (!is_leaf(node))) {} return leaves_iterator(node, this); }
+
+        /**
+         * Return an iterator referring to just past the last node of a leaf iteration
+         * @return An iterator referring to just past the last node of a leaf iteration
+         */
         leaves_iterator leaves_end() { return leaves_iterator((CT_NODE_T)get_num_nodes(), this); }
 
         /**
@@ -312,7 +340,19 @@ class compact_tree {
                 bool operator!=(const children_iterator & rhs) const { return it != rhs.it; }
                 CT_NODE_T operator*() { return *it; }
         };
+
+        /**
+         * Return an iterator referring to the first child of a node
+         * @param node The node to iterate over the children of
+         * @return An iterator referring to the first child of `node`
+         */
         children_iterator children_begin(CT_NODE_T node) { return children_iterator(children[node].begin()); }
+
+        /**
+         * Return an iterator referring to just past the last child of a node
+         * @param node The node to iterate over the children of
+         * @return An iterator referring to just past the last child of `node`
+         */
         children_iterator children_end(CT_NODE_T node) { return children_iterator(children[node].end()); }
 
         /**

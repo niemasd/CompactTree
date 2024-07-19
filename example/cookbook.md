@@ -31,3 +31,129 @@ compact_tree tree(newick_string, false, true, true, 0);
 ```
 
 Since the default value of `is_fn` is `true`, loading a Newick string requires specifying all constructor arguments.
+
+## Properties of a Tree
+
+### Number of Nodes
+
+The number of nodes in a tree can be retrieved in constant time using the `compact_tree::get_num_nodes` function:
+
+```cpp
+size_t num_nodes = tree.get_num_nodes();
+```
+
+### Number of Leaves
+
+The number of leaves in a tree can be calculated in linear time using the `compact_tree::get_num_leaves` function:
+
+```cpp
+size_t num_leaves = tree.get_num_leaves();
+```
+
+After `compact_tree::get_num_leaves` is called the first time, the calculated number of leaves is saved internally, and future calls to `compact_tree::get_num_leaves` will be constant time.
+
+### Number of Internal Nodes
+
+The number of internal nodes in a tree can be calculated in linear time using the `compact_tree::get_num_internal` function:
+
+```cpp
+size_t num_internal = tree.get_num_internal();
+```
+
+The `compact_tree::get_num_internal` function calculates the number of internal nodes by first calling `compact_tree::get_num_leaves` to calculate the number of leaves, then calling `compact_tree::get_num_nodes` to get the total number of nodes, and finally subtracting the number of leaves from the number of nodes. Thus, the first call to `compact_tree::get_num_internal` *or* `compact_tree::get_num_leaves` will be linear time, and all subsequent calls to *either* function will be constant time.
+
+## Properties of a Node
+
+Nodes of a tree are represented using type `CT_NODE_T`, which is either a 32-bit (default) or 64-bit unsigned integer (i.e., [`std::uint32_t` or `std::uint64_t`](https://cplusplus.com/reference/cstdint/)). The value of a node is guaranteed to be smaller than the values of its children. By extension, `ROOT_NODE` (an alias for the root) is always 0. We also reserve a special alias, `NULL_NODE`, to represent a null node with value `(CT_NODE_T)(-1)`.
+
+### Label
+
+Node labels are represented as type [`std::string`](https://cplusplus.com/reference/string/string/). The label of `node` can be retrieved using the `compact_tree::get_label` function:
+
+```cpp
+std::string node_label = tree.get_label(node);
+```
+
+If the `compact_tree` object is not storing node labels (i.e., the constructor was called with `store_labels=false`), `compact_tree::get_label` will return the empty string (`""`).
+
+### Length
+
+Edge lengths are represented as type `CT_LENGTH_T`, which is either `float` (default) or `double`. The length of the incident edge of `node` (i.e., the edge between `node` and its parent) can be retrieved using the `compact_tree::get_edge_length` function:
+
+```cpp
+CT_LENGTH_T node_edge_length = tree.get_edge_length(node);
+```
+
+### Parent
+
+The parent of `node` can be retrieved using the `compact_tree::get_parent` function:
+
+```cpp
+CT_NODE_T parent = tree.get_parent(node);
+```
+
+The root of a tree does not have a parent, so `tree.get_parent(ROOT_NODE)` will return `NULL_NODE`.
+
+### Children
+
+The children of `node` can be iterated over using the `compact_tree::children_iterator` class via the `compact_tree::children_begin` and `compact_tree::children_end` functions:
+
+```cpp
+for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
+    // visit `*it`, which is a `CT_NODE_T`
+}
+```
+
+## Traversing a Tree
+
+Because nodes are represented as unsigned integers, tree traversals can be performed extremely quickly.
+
+### Pre-Order
+
+Because every node has a smaller value than its children, a preorder traversal of a tree with N nodes can be implemented trivially by simply iterating over the integers 0 through N–1:
+
+```cpp
+for(CT_NODE_T node = 0; node < N; ++node) {
+    // visit `node`
+}
+```
+
+A preorder traversal can also be performed using the `compact_tree::preorder_iterator` class via the `compact_tree::preorder_begin` and `compact_tree::preorder_end` functions:
+
+```cpp
+for(auto it = tree.preorder_begin(); it != tree.preorder_end(); ++it) {
+    // visit `*it`, which is a `CT_NODE_T`
+}
+```
+
+### Post-Order
+
+Because every node has a smaller value than its children, a postorder traversal of a tree with N nodes can be implemented trivially by simply iterating over the integers N–1 through 0. However, because `CT_NODE_T` is an unsigned type, you need to be careful with the loop bounds, as decrementing 0 will not yield a negative number (it will wrap around to `NULL_NODE`):
+
+```cpp
+for(CT_NODE_T node = N-1; node != NULL_NODE; --node) {
+    // visit `node`
+}
+```
+
+A postorder traversal can also be performed using the `compact_tree::postorder_iterator` class via the `compact_tree::postorder_begin` and `compact_tree::postorder_end` functions:
+
+```cpp
+for(auto it = tree.postorder_begin(); it != tree.postorder_end(); ++it) {
+    // visit `*it`, which is a `CT_NODE_T`
+}
+```
+
+### Level-Order
+
+CompactTree doesn't currently provide a built-in level-order traversal, but a level-order traversal can be trivially implemented using the [`std::queue`](https://cplusplus.com/reference/queue/queue/) class:
+
+```cpp
+std::queue<CT_NODE_T> to_visit;         // create an empty queue
+to_visit.push(ROOT_NODE);               // add the root (0) to the queue
+while(!to_visit.empty()) {              // while the queue is not empty,
+    CT_NODE_T _node = to_visit.front(); // get the node that's at the front of the queue
+    to_visit.pop();                     // pop the queue
+    // visit `node`                     // visit the node
+}
+```
