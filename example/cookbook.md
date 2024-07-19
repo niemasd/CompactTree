@@ -84,6 +84,8 @@ Edge lengths are represented as type `CT_LENGTH_T`, which is either `float` (def
 CT_LENGTH_T node_edge_length = tree.get_edge_length(node);
 ```
 
+If the `compact_tree` object is not storing edge lenghts (i.e., the constructor was called with `store_lengths=false`), `compact_tree::get_edge_length` will return 0.
+
 ### Parent
 
 The parent of `node` can be retrieved using the `compact_tree::get_parent` function:
