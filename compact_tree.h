@@ -252,6 +252,7 @@ class compact_tree {
             public:
                 preorder_iterator(CT_NODE_T x) : node(x) {}
                 preorder_iterator(const preorder_iterator & it) : node(it.node) {}
+                preorder_iterator & operator=(const preorder_iterator & it) { node = it.node; return *this; }
                 preorder_iterator & operator++() { ++node; return *this; }
                 preorder_iterator operator++(int) { preorder_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const preorder_iterator & rhs) const { return node == rhs.node; }
@@ -279,6 +280,7 @@ class compact_tree {
             public:
                 postorder_iterator(CT_NODE_T x) : node(x) {}
                 postorder_iterator(const postorder_iterator & it) : node(it.node) {}
+                postorder_iterator & operator=(const postorder_iterator & it) { node = it.node; return *this; }
                 postorder_iterator & operator++() { --node; return *this; }
                 postorder_iterator operator++(int) { postorder_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const postorder_iterator & rhs) const { return node == rhs.node; }
@@ -302,10 +304,11 @@ class compact_tree {
          */
         class leaves_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
             private:
-                CT_NODE_T node; const compact_tree* const tree_ptr;
+                CT_NODE_T node; const compact_tree* tree_ptr;
             public:
                 leaves_iterator(CT_NODE_T x, const compact_tree* const tp) : node(x), tree_ptr(tp) {}
                 leaves_iterator(const leaves_iterator & it) : node(it.node), tree_ptr(it.tree_ptr) {}
+                leaves_iterator & operator=(const leaves_iterator & it) { node = it.node; tree_ptr = it.tree_ptr; return *this; }
                 leaves_iterator & operator++() { CT_NODE_T num_nodes = tree_ptr->get_num_nodes(); while(((++node) < num_nodes) && !(tree_ptr->is_leaf(node))) {} return *this; }
                 leaves_iterator operator++(int) { leaves_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const leaves_iterator & rhs) const { return node == rhs.node; }
@@ -334,6 +337,7 @@ class compact_tree {
             public:
                 children_iterator(std::vector<CT_NODE_T>::iterator x) : it(x) {}
                 children_iterator(const children_iterator & o) : it(o.it) {}
+                children_iterator & operator=(const children_iterator & o) { it = o.it; return *this; }
                 children_iterator & operator++() { ++it; return *this; }
                 children_iterator operator++(int) { children_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const children_iterator & rhs) const { return it == rhs.it; }
