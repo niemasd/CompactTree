@@ -10,6 +10,7 @@
 #include <cstdlib>       // std::atof
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
+#include <iostream>      // std::ostream
 #include <queue>         // std::queue
 #include <stack>         // std::stack
 #include <stdexcept>     // std::invalid_argument
@@ -96,7 +97,7 @@ class compact_tree {
          * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
          * @param reserve How many nodes to reserve memory for up-front to avoid `std::vector` resizes. It's fine if the true number of nodes in the tree exceeds this value (the `std::vector` will resize automatically), but get as close as possible for speed.
          */
-        compact_tree(char* input, bool is_fn = true, bool store_labels = true, bool store_lengths = true, size_t reserve = 0);
+        compact_tree(const char* const input, bool is_fn = true, bool store_labels = true, bool store_lengths = true, size_t reserve = 0);
 
         /**
          * Load a tree from a Newick file or `std::string`
@@ -106,7 +107,7 @@ class compact_tree {
          * @param store_lengths `true` to store edge lengths (default), otherwise `false` (saves memory)
          * @param reserve How many nodes to reserve memory for up-front to avoid `std::vector` resizes. It's fine if the true number of nodes in the tree exceeds this value (the `std::vector` will resize automatically), but get as close as possible for speed.
          */
-        compact_tree(std::string & input, bool is_fn = true, bool store_labels = true, bool store_lengths = true, size_t reserve = 0) : compact_tree(&input[0], is_fn, store_labels, store_lengths, reserve) {}
+        compact_tree(const std::string & input, bool is_fn = true, bool store_labels = true, bool store_lengths = true, size_t reserve = 0) : compact_tree(&input[0], is_fn, store_labels, store_lengths, reserve) {}
 
         /**
          * Copy constructor
@@ -533,29 +534,23 @@ compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
 }
 
 // compact_tree constructor (putting it last because it's super long)
-compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool store_lengths, size_t reserve) {
+compact_tree::compact_tree(const char* const input, bool is_fn, bool store_labels, bool store_lengths, size_t reserve) {
     // reserve space up-front (if given `reserve`) to reduce resizing (save time)
     if(reserve != 0) { parent.reserve(reserve); if(store_lengths) { length.reserve(reserve); } if(store_labels) { label.reserve(reserve); } }
 
     // set up file input: https://stackoverflow.com/a/17925143/2134991
     int fd = -1;
-    size_t bytes_read = 0; size_t i;              // variables to help with reading
-    char read_buf[IO_BUFFER_SIZE + 1];            // buffer for reading
-    char str_buf[STR_BUFFER_SIZE] = {}; size_t str_buf_i = 0; // helper string buffer
-    char* buf;                                    // either read_buf (if reading from file) or the C string (if reading Newick string)
+    size_t bytes_read = 0; size_t i;                            // variables to help with reading
+    const size_t INPUT_LEN = strlen(input); size_t input_i = 0; // variables to help with reading from Newick string specifically
+    char buf[IO_BUFFER_SIZE + 1];                               // buffer for reading
+    char str_buf[STR_BUFFER_SIZE] = {}; size_t str_buf_i = 0;   // helper string buffer
     if(is_fn) {
         fd = open(input, O_RDONLY);
         if(fd == -1) {
             throw std::invalid_argument(ERROR_OPENING_FILE + std::string(": ") + std::string(input));
         }
-        posix_fadvise(fd, 0, 0, 1);               // FDADVICE_SEQUENTIAL
-        buf = read_buf;
-    } else {
-        bytes_read = strlen(input);
-        buf = input;
+        posix_fadvise(fd, 0, 0, 1); // FDADVICE_SEQUENTIAL
     }
-
-    // set up root node (initially empty/blank)
 
     // set up initial Newick parsing state
     create_child(NULL_NODE, store_labels, store_lengths); // create empty root node
@@ -572,7 +567,16 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
         if(is_fn) {
             bytes_read = read(fd, buf, IO_BUFFER_SIZE);
         } else {
-            buf = input;
+            if(input_i == INPUT_LEN) { // finished parsing string
+                bytes_read = 0;
+            } else {
+                if((input_i + IO_BUFFER_SIZE) <= INPUT_LEN) {
+                    bytes_read = IO_BUFFER_SIZE;
+                } else {               // fewer than IO_BUFFER_SIZE bytes left in Newick string (input)
+                    bytes_read = INPUT_LEN - input_i;
+                }
+                memcpy(buf, input+input_i, bytes_read); input_i += bytes_read;
+            }
         }
 
         // handle done reading (!bytes_read) and read failed (bytes_read == -1)
