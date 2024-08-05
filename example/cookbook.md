@@ -151,11 +151,14 @@ for(auto it = tree.postorder_begin(); it != tree.postorder_end(); ++it) {
 CompactTree doesn't currently provide a built-in level-order traversal, but a level-order traversal can be trivially implemented using the [`std::queue`](https://cplusplus.com/reference/queue/queue/) class:
 
 ```cpp
-std::queue<CT_NODE_T> to_visit;         // create an empty queue
-to_visit.push(ROOT_NODE);               // add the root (0) to the queue
-while(!to_visit.empty()) {              // while the queue is not empty,
-    CT_NODE_T _node = to_visit.front(); // get the node that's at the front of the queue
-    to_visit.pop();                     // pop the queue
-    // visit `node`                     // visit the node
+std::queue<CT_NODE_T> to_visit;        // create an empty queue
+to_visit.push(ROOT_NODE);              // add the root (0) to the queue
+while(!to_visit.empty()) {             // while the queue is not empty,
+    CT_NODE_T node = to_visit.front(); // get the node that's at the front of the queue
+    to_visit.pop();                    // pop the queue
+    // visit `node`                    // visit the node
+    for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
+        to_visit.push(*it);            // add each child of `node` to the queue
+    }
 }
 ```
