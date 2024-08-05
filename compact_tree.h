@@ -245,7 +245,7 @@ class compact_tree {
         }
 
         /**
-         * Preorder traversal iterator. The only guarantee is that a node will be visited before its children.
+         * Pre-order traversal iterator. The only guarantee is that a node will be visited before its children.
          * Currently, nodes will be visited in the order they appear in the original Newick string.
          */
         class preorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
@@ -261,15 +261,16 @@ class compact_tree {
                 bool operator!=(const preorder_iterator & rhs) const { return node != rhs.node; }
                 CT_NODE_T operator*() { return node; }
         };
+
         /**
-         * Return an iterator referring to the first node of a preorder traversal
-         * @return An iterator referring to the first node of a preorder traversal
+         * Return an iterator referring to the first node of a pre-order traversal
+         * @return An iterator referring to the first node of a pre-order traversal
          */
         preorder_iterator preorder_begin() { return preorder_iterator(ROOT_NODE); }
 
         /**
-         * Return an iterator referring just past the last node of a preorder traversal
-         * @return An iterator referring just past the last node of a preorder traversal
+         * Return an iterator referring just past the last node of a pre-order traversal
+         * @return An iterator referring just past the last node of a pre-order traversal
          */
         preorder_iterator preorder_end () { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
 
@@ -291,16 +292,48 @@ class compact_tree {
                 CT_NODE_T operator*() { return node; }
         };
         /**
-         * Return an iterator referring to the first node of a postorder traversal
-         * @return An iterator referring to the first node of a postorder traversal
+         * Return an iterator referring to the first node of a post-order traversal
+         * @return An iterator referring to the first node of a post-order traversal
          */
         postorder_iterator postorder_begin() { return postorder_iterator((CT_NODE_T)(get_num_nodes() - 1)); }
 
         /**
-         * Return an iterator referring just past the last node of a postorder traversal
-         * @return An iterator referring just past the last node of a postorder traversal
+         * Return an iterator referring just past the last node of a post-order traversal
+         * @return An iterator referring just past the last node of a post-order traversal
          */
         postorder_iterator postorder_end() { return postorder_iterator(NULL_NODE); }
+
+        /**
+         * Levelorder traversal iterator. The only guarantee is that nodes will be visited in increasing order of depth (i.e., number of edges from the root).
+         * Currently, nodes with the same depth will be visited in the order they appear in the original Newick string.
+         */
+        class levelorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
+            private:
+                std::queue<CT_NODE_T> q; compact_tree* tree_ptr;
+            public:
+                levelorder_iterator(compact_tree* const tp) : tree_ptr(tp) {}
+                levelorder_iterator(const CT_NODE_T root, compact_tree* const tp) : tree_ptr(tp) { q.push(root); }
+                levelorder_iterator(std::queue<CT_NODE_T> x, compact_tree* const tp) : q(x), tree_ptr(tp) {}
+                levelorder_iterator(const levelorder_iterator & o) : q(o.q), tree_ptr(o.tree_ptr) {}
+                levelorder_iterator & operator=(const levelorder_iterator & o) { q = o.q; tree_ptr = o.tree_ptr; return *this; }
+                levelorder_iterator & operator++() { CT_NODE_T x = q.front(); auto it_end = tree_ptr->children_end(x); for(auto it = tree_ptr->children_begin(x); it != it_end; ++it) { q.push(*it); } q.pop(); return *this; }
+                levelorder_iterator operator++(int) { levelorder_iterator tmp(*this); operator++(); return tmp; }
+                bool operator==(const levelorder_iterator & rhs) const { return q == rhs.q; }
+                bool operator!=(const levelorder_iterator & rhs) const { return q != rhs.q; }
+                CT_NODE_T operator*() { return q.front(); }
+        };
+
+        /**
+         * Return an iterator referring to the first node of a level-order traversal
+         * @return An iterator referring to the first node of a level-order traversal
+         */
+        levelorder_iterator levelorder_begin() { return levelorder_iterator(ROOT_NODE, this); }
+
+        /**
+         * Return an iterator referring just past the last node of a level-order traversal
+         * @return An iterator referring just past the last node of a level-order traversal
+         */
+        levelorder_iterator levelorder_end() { return levelorder_iterator(this); }
 
         /**
          * Iterate over the leaves of this tree.

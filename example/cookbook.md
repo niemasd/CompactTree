@@ -154,20 +154,15 @@ The only guarantee is that a node will be visited before its parent. Currently, 
 
 ### Level-Order
 
-CompactTree doesn't currently provide a built-in level-order traversal, but a level-order traversal can be trivially implemented using the [`std::queue`](https://cplusplus.com/reference/queue/queue/) class:
+A level-order traversal can be performed using the `compact_tree::levelorder_iterator` class via the `compact_tree::levelorder_begin` and `compact_tree::levelorder_end` functions:
 
 ```cpp
-std::queue<CT_NODE_T> to_visit;        // create an empty queue
-to_visit.push(ROOT_NODE);              // add the root (0) to the queue
-while(!to_visit.empty()) {             // while the queue is not empty,
-    CT_NODE_T node = to_visit.front(); // get the node that's at the front of the queue
-    to_visit.pop();                    // pop the queue
-    // visit `node`                    // visit the node
-    for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
-        to_visit.push(*it);            // add each child of `node` to the queue
-    }
+for(auto it = tree.levelorder_begin(); it != tree.levelorder_end(); ++it) {
+    // visit `*it`, which is a `CT_NODE_T`
 }
 ```
+
+The only guarantee is that nodes will be visited in increasing order of depth (i.e., number of edges from the root). Currently, nodes with the same depth will be visited in the order they appear in the original Newick string.
 
 ### Leaves
 
