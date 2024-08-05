@@ -245,7 +245,8 @@ class compact_tree {
         }
 
         /**
-         * Preorder traversal iterator. The only guarantee is that a node will be visited before its children
+         * Preorder traversal iterator. The only guarantee is that a node will be visited before its children.
+         * Currently, nodes will be visited in the order they appear in the original Newick string.
          */
         class preorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
             private:
@@ -273,7 +274,8 @@ class compact_tree {
         preorder_iterator preorder_end () { return preorder_iterator((CT_NODE_T)get_num_nodes()); }
 
         /**
-         * Postorder traversal iterator. The only guarantee is that a node will be visited before its parent
+         * Postorder traversal iterator. The only guarantee is that a node will be visited before its parent.
+         * Currently, nodes will be visited in reverse of the order they appear in the original Newick string.
          */
         class postorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
             private:
@@ -301,7 +303,8 @@ class compact_tree {
         postorder_iterator postorder_end() { return postorder_iterator(NULL_NODE); }
 
         /**
-         * Iterate over the leaves of this tree
+         * Iterate over the leaves of this tree.
+         * Currently, leaves will be visited in the order they appear in the original Newick string.
          */
         class leaves_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
             private:
@@ -330,7 +333,8 @@ class compact_tree {
         leaves_iterator leaves_end() { return leaves_iterator((CT_NODE_T)get_num_nodes(), this); }
 
         /**
-         * Iterate over the children of a given node
+         * Iterate over the children of a given node.
+         * Currently, children will be visited in the order they appear in the original Newick string.
          */
         class children_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
             private:

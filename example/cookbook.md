@@ -106,6 +106,8 @@ for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
 }
 ```
 
+Currently, children will be visited in the order they appear in the original Newick string.
+
 ## Traversing a Tree
 
 Because nodes are represented as unsigned integers, tree traversals can be performed extremely quickly.
@@ -128,6 +130,8 @@ for(auto it = tree.preorder_begin(); it != tree.preorder_end(); ++it) {
 }
 ```
 
+The only guarantee is that a node will be visited before its children. Currently, nodes will be visited in the order they appear in the original Newick string.
+
 ### Post-Order
 
 Because every node has a smaller value than its children, a postorder traversal of a tree with N nodes can be implemented trivially by simply iterating over the integers N–1 through 0. However, because `CT_NODE_T` is an unsigned type, you need to be careful with the loop bounds, as decrementing 0 will not yield a negative number (it will wrap around to `NULL_NODE`):
@@ -146,6 +150,8 @@ for(auto it = tree.postorder_begin(); it != tree.postorder_end(); ++it) {
 }
 ```
 
+The only guarantee is that a node will be visited before its parent. Currently, nodes will be visited in reverse of the order they appear in the original Newick string.
+
 ### Level-Order
 
 CompactTree doesn't currently provide a built-in level-order traversal, but a level-order traversal can be trivially implemented using the [`std::queue`](https://cplusplus.com/reference/queue/queue/) class:
@@ -162,3 +168,15 @@ while(!to_visit.empty()) {             // while the queue is not empty,
     }
 }
 ```
+
+### Leaves
+
+A traversal over the leaves of a tree can be performed using the `compact_tree::leaves_iterator` class via the `compact_tree::leaves_begin` and `compact_tree::leaves_end` functions:
+
+```cpp
+for(auto it = tree.leaves_begin(); it != tree.leaves_end(); ++it) {
+    // visit `*it`, which is a `CT_NODE_T`
+}
+```
+
+Currently, leaves will be visited in the order they appear in the original Newick string.
