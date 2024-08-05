@@ -40,7 +40,7 @@
 #endif
 
 // general constants
-#define COMPACTTREE_VERSION "0.0.3"
+#define COMPACTTREE_VERSION "0.0.4"
 #define IO_BUFFER_SIZE 16384
 #define STR_BUFFER_SIZE 16384
 const std::string EMPTY_STRING = "";
@@ -542,7 +542,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
     if(is_fn) {
         fd = open(input, O_RDONLY);
         if(fd == -1) {
-            throw std::invalid_argument(ERROR_OPENING_FILE + ": " + input);
+            throw std::invalid_argument(ERROR_OPENING_FILE + std::string(": ") + std::string(input));
         }
         posix_fadvise(fd, 0, 0, 1);               // FDADVICE_SEQUENTIAL
         buf = read_buf;
@@ -573,7 +573,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
 
         // handle done reading (!bytes_read) and read failed (bytes_read == -1)
         if(!bytes_read || bytes_read == (size_t)(-1)) {
-            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
         }
 
         // iterate over the characters in the buffer
@@ -646,14 +646,14 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                     // end of Newick string
                     case ';':
                         if(curr_node != (CT_NODE_T)0) {
-                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
                         }
                         return;
 
                     // go to new child
                     case '(':
                         if(curr_node == NULL_NODE) {
-                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
                         }
                         curr_node = create_child(curr_node, store_labels, store_lengths); break;
 
@@ -664,7 +664,7 @@ compact_tree::compact_tree(char* input, bool is_fn, bool store_labels, bool stor
                     // go to new sibling
                     case ',':
                         if((curr_node == NULL_NODE) || (parent[curr_node] == NULL_NODE)) {
-                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + ": " + input);
+                            throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
                         }
                         curr_node = create_child(parent[curr_node], store_labels, store_lengths); break;
 
