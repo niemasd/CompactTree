@@ -76,6 +76,26 @@ std::string node_label = tree.get_label(node);
 
 If the `compact_tree` object is not storing node labels (i.e., the constructor was called with `store_labels=false`), `compact_tree::get_label` will return the empty string (`""`).
 
+The label of `node` can be changed to `new_label` using the `compact_tree::set_label` function:
+
+```cpp
+tree.set_label(node, new_label);
+```
+
+If the `compact_tree` object was not storing node labels prior to calling `compact_tree::set_label` (i.e., the constructor was called with `store_labels=false`), node labels will be allocated upon the first call to `compact_tree::set_label`, and all nodes other than `node` will be assigned the empty string (`""`) as their label.
+
+The labels of many nodes can be changed in bulk using the `compact_tree::replace_labels` function:
+
+```cpp
+tree.replace_labels(label_map);
+```
+
+By default, `compact_tree::replace_labels` will replace *all* matching node labels (including internal nodes). However, in some contexts, you may not want to replace the labels of internal nodes (e.g. if they represent some type of special information). There is a second optional parameter, `include_internal`, that can be set to `false` in order to only replace leaf labels:
+
+```cpp
+tree.replace_labels(label_map, false);
+```
+
 ### Length
 
 Edge lengths are represented as type `CT_LENGTH_T`, which is either `float` (default) or `double`. The length of the incident edge of `node` (i.e., the edge between `node` and its parent) can be retrieved using the `compact_tree::get_edge_length` function:
@@ -84,7 +104,15 @@ Edge lengths are represented as type `CT_LENGTH_T`, which is either `float` (def
 CT_LENGTH_T node_edge_length = tree.get_edge_length(node);
 ```
 
-If the `compact_tree` object is not storing edge lenghts (i.e., the constructor was called with `store_lengths=false`), `compact_tree::get_edge_length` will return 0.
+If the `compact_tree` object is not storing edge lengths (i.e., the constructor was called with `store_lengths=false`), `compact_tree::get_edge_length` will return 0.
+
+The length of the incident edge of `node` can be changed to `new_length` using the `compact_tree::set_edge_length` function:
+
+```cpp
+tree.set_edge_length(node, new_length);
+```
+
+If the `compact_tree` object was not storing edge lengths prior to calling `compact_tree::set_edge_length` (i.e., the constructor was called with `store_lengths=false`), edge lengths will be allocated upon the first call to `compact_tree::set_edge_length`, and all edges other than the one incident to `node` will be assigned 0 as their length.
 
 ### Parent
 
@@ -107,6 +135,22 @@ for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
 ```
 
 Currently, children will be visited in the order they appear in the original Newick string.
+
+### All Node Data
+
+While you can retrieve the individual data members of a given node via the getter functions described above, you can also retrieve *all* of the data associated with `node` as an [`std::tuple`](https://cplusplus.com/reference/tuple/tuple/) using the square-brackets operator (`[]`):
+
+```cpp
+std::tuple<const std::string*, CT_LENGTH_T, CT_NODE_T, const std::vector<CT_NODE_T>*> node_data = tree[node];
+const std::string* node_label_ptr = std::get<0>(node_data);
+const std::string node_label = *node_label_ptr;
+CT_LENGTH_T node_length = std::get<1>(node_data);
+CT_NODE_T node_parent = std::get<2>(node_data);
+const std::vector<CT_NODE_T>* node_children_ptr = std::get<3>(node_data);
+const std::vector<CT_NODE_T> node_children = *node_children_ptr;
+```
+
+However, we recommend only accessing the individual data members of a given node using the aforementioned getter functions, as the square-brackets operator creates an [`std::tuple`](https://cplusplus.com/reference/tuple/tuple/) object, which could add some time/memory overhead to your program.
 
 ## Traversing a Tree
 

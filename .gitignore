@@ -5,6 +5,7 @@ load_tree_string
 print_distance_matrix
 print_distances
 print_mrca
+print_node_data
 print_num_descendants
 print_root_dists
 print_stats

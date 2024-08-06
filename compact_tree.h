@@ -41,7 +41,7 @@
 #endif
 
 // general constants
-#define COMPACTTREE_VERSION "0.0.4"
+#define COMPACTTREE_VERSION "0.0.5"
 #define IO_BUFFER_SIZE 16384
 #define STR_BUFFER_SIZE 16384
 const std::string EMPTY_STRING = "";
@@ -195,7 +195,7 @@ class compact_tree {
         /**
          * Set the incident edge length of a node
          * @param node The node to set the incident edge length of
-         * @param The new edge length to set
+         * @param new_length The new edge length to set
          */
         void set_edge_length(CT_NODE_T node, CT_LENGTH_T new_length) {
             if(!has_edge_lengths()) { length = std::vector<CT_LENGTH_T>(get_num_nodes(), (CT_LENGTH_T)0.); } length[node] = new_length;
@@ -243,6 +243,13 @@ class compact_tree {
                 }
             }
         }
+
+        /**
+         * Return the data associated with a given node
+         * @param i The node whose data to return
+         * @return A `tuple<const string*, CT_LENGTH_T, CT_NODE_T, const vector<CT_NODE_T>*>` containing (1) a pointer to the label, (2) the incident edge length, (3) the parent, and (4) a pointer to the collection of children of node `i`
+         */
+        std::tuple<const std::string*, CT_LENGTH_T, CT_NODE_T, const std::vector<CT_NODE_T>*> operator[](CT_NODE_T i) const { return std::make_tuple(&get_label(i), get_edge_length(i), parent[i], &children[i]); }
 
         /**
          * Pre-order traversal iterator. The only guarantee is that a node will be visited before its children.
