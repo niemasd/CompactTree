@@ -306,6 +306,7 @@ class compact_tree {
         /**
          * Levelorder traversal iterator. The only guarantee is that nodes will be visited in increasing order of depth (i.e., number of edges from the root).
          * Currently, nodes with the same depth will be visited in the order they appear in the original Newick string.
+         * Note that the copy constructor and the post-increment `it++` operator will copy the BFS queue, which is slow and uses extra memory, so avoid both when possible.
          */
         class levelorder_iterator : public std::iterator<std::input_iterator_tag, CT_NODE_T> {
             private:
