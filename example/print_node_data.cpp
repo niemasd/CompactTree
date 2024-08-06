@@ -1,5 +1,5 @@
 /**
- * Print root distances of all labeled nodes in the tree to showcase pre-order and level-order traversal
+ * Print summary data about every node in the tree
  */
 #include <iostream>
 #include "compact_tree.h"

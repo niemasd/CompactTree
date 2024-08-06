@@ -1,6 +1,6 @@
 # Cookbook
 
-This page contains many examples of CompactTree usage. Rather than showing complete programs (which would require the boilerplate code of the `#include` statement, function header(s), and function return value(s), these examples will be short self-contained code snippets that can be incorporated into larger functions. In all of the examples below, `tree` is a `compact_tree` object.
+This page contains many examples of CompactTree usage. Rather than showing complete programs (which would require the boilerplate code of `#include` statements, function headers, and function return values), these examples will be short self-contained code snippets that can be incorporated into larger functions/programs (see the [`example`](https://github.com/niemasd/CompactTree/tree/main/example) directory of the CompactTree repository for complete example programs). In all of the examples below, `tree` is a `compact_tree` object.
 
 ## Loading a Tree
 
