@@ -7,7 +7,7 @@
 
 // include statements
 #include <cstdint>       // std::uint32_t, std::uint64_t
-#include <cstdlib>       // std::atof
+#include <cstdlib>       // std::abs, std::atof
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::ostream
@@ -48,6 +48,7 @@ const std::string EMPTY_STRING = "";
 const CT_NODE_T ROOT_NODE = (CT_NODE_T)0;
 const CT_NODE_T NULL_NODE = (CT_NODE_T)(-1);
 const CT_LENGTH_T ZERO_LENGTH = (CT_LENGTH_T)0.;
+const CT_LENGTH_T ZERO_THRESH = (CT_LENGTH_T)0.000001;
 
 // error messages
 const std::string ERROR_OPENING_FILE = "Error opening file";
@@ -79,6 +80,8 @@ class compact_tree {
         /**
          * Helper function to create a new node and add it as a child to a given node
          * @param parent_node The parent node
+         * @param store_labels `true` if this `compact_tree` is storing labels, otherwise `false`
+         * @param store-lengths `true` if this `compact_tree` is storing lengths, otherwise `false`
          * @return The newly-created child node
          */
         CT_NODE_T create_child(const CT_NODE_T parent_node, bool store_labels, bool store_lengths);
@@ -114,6 +117,15 @@ class compact_tree {
          * @param o The other `compact_tree` to copy
          */
         compact_tree(const compact_tree & o) : parent(o.parent), children(o.children), label(o.label), length(o.length), num_leaves(o.num_leaves) {}
+
+        /**
+         * Add a child to an existing node
+         * @param parent_node The parent node
+         * @param new_label The label of the new child node
+         * @param new_length The length of edge incident to the new child node
+         * @return The newly-created child node
+         */
+        CT_NODE_T add_child(const CT_NODE_T parent_node, const std::string & new_label = EMPTY_STRING, CT_LENGTH_T new_length = ZERO_LENGTH) { if((num_leaves != 0) && !is_leaf(parent_node)) { ++num_leaves; } CT_NODE_T x = create_child(parent_node,has_labels(),has_edge_lengths()); if(!(new_label.empty())) { set_label(x,new_label); } if(std::abs(new_length) > ZERO_THRESH) { set_edge_length(x,new_length); } return x; }
 
         /**
          * Print the Newick string of the subtree rooted at a specific node
@@ -173,6 +185,13 @@ class compact_tree {
          * @return The parent of `node`
          */
         CT_NODE_T get_parent(CT_NODE_T node) const { return parent[node]; }
+
+        /**
+         * Get the children of a node
+         * @param node The node to get the children of
+         * @return The children of `node`
+         */
+        const std::vector<CT_NODE_T> & get_children(CT_NODE_T node) const { return children[node]; }
 
         /**
          * Check if this tree is storing edge lengths

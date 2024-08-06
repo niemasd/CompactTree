@@ -126,7 +126,13 @@ The root of a tree does not have a parent, so `tree.get_parent(ROOT_NODE)` will 
 
 ### Children
 
-The children of `node` can be iterated over using the `compact_tree::children_iterator` class via the `compact_tree::children_begin` and `compact_tree::children_end` functions:
+The children of `node` can be retrieved using the `compact_tree::get_children` function:
+
+```cpp
+const std::vector<CT_NODE_T> & node_children = tree.get_children(node);
+```
+
+Alternatively, the children of `node` can be iterated over using the `compact_tree::children_iterator` class via the `compact_tree::children_begin` and `compact_tree::children_end` functions:
 
 ```cpp
 for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
@@ -135,6 +141,15 @@ for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
 ```
 
 Currently, children will be visited in the order they appear in the original Newick string.
+
+#### Adding a Child
+
+While CompactTree does not support substantially restructuring the tree topology because of how it internally represents the tree structure, it *does* allow *adding* a child to `node` using the `compact_tree::add_child` function:
+
+```cpp
+CT_NODE_T new_child_1 = tree.add_child(node);
+CT_NODE_T new_child_2 = tree.add_child(node, "Niema", 123.456);
+```
 
 ### All Node Data
 
