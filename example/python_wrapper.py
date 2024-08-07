@@ -27,14 +27,14 @@ if __name__ == "__main__":
     print("  - Internal: %s" % tree.calc_avg_bl(include_leaves=False))
     print()
 
-    # print weighted root distances
-    print("=== Weighted Root Distances ===")
-    weighted_root_dists = [0] * tree.get_num_nodes()
-    for node in traverse_preorder(tree):
-        if not tree.is_root(node):
-            weighted_root_dists[node] = weighted_root_dists[tree.get_parent(node)] + tree.get_edge_length(node)
+    # print number of descendants below each node (including the node itself)
+    print("=== Number of Descendants ===")
+    num_descendants = [1] * tree.get_num_nodes()
+    for node in traverse_postorder(tree):
+        if not tree.is_leaf(node):
+            num_descendants[node] = 1 + sum(num_descendants[child] for child in tree.get_children(node))
         if tree.get_label(node) != "":
-            print("(%s:%f)" % (tree.get_label(node), weighted_root_dists[node]), end=' ')
+            print("(%s:%d)" % (tree.get_label(node), num_descendants[node]), end=' ')
     print(); print()
 
     # print unweighted root distances (depths)
@@ -45,6 +45,16 @@ if __name__ == "__main__":
             unweighted_root_dists[node] = unweighted_root_dists[tree.get_parent(node)] + 1
         if tree.get_label(node) != "":
             print("(%s:%d)" % (tree.get_label(node), unweighted_root_dists[node]), end=' ')
+    print(); print()
+
+    # print weighted root distances
+    print("=== Weighted Root Distances ===")
+    weighted_root_dists = [0] * tree.get_num_nodes()
+    for node in traverse_preorder(tree):
+        if not tree.is_root(node):
+            weighted_root_dists[node] = weighted_root_dists[tree.get_parent(node)] + tree.get_edge_length(node)
+        if tree.get_label(node) != "":
+            print("(%s:%f)" % (tree.get_label(node), weighted_root_dists[node]), end=' ')
     print(); print()
 
     # print Newick

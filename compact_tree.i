@@ -48,7 +48,7 @@ def traverse_levelorder(tree):
     while len(q) != 0:
         node = q.popleft(); yield node; q.extend(tree.get_children(node))
 def traverse_postorder(tree):
-    return range(tree.get_num_nodes(), -1, -1)
+    return range(tree.get_num_nodes()-1, -1, -1)
 def traverse_preorder(tree):
     return range(tree.get_num_nodes())
 %}
