@@ -38,6 +38,17 @@
 
 /* helper functions for tree traversals */
 %pythoncode %{
+from collections import deque
+def traverse_leaves(tree):
+    for node in range(tree.get_num_nodes()):
+        if tree.is_leaf(node):
+            yield node
+def traverse_levelorder(tree):
+    q = deque(); q.append(0)
+    while len(q) != 0:
+        node = q.popleft(); yield node; q.extend(tree.get_children(node))
+def traverse_postorder(tree):
+    return range(tree.get_num_nodes(), -1, -1)
 def traverse_preorder(tree):
     return range(tree.get_num_nodes())
 %}
