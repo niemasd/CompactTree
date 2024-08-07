@@ -12,6 +12,7 @@
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::ostream
 #include <queue>         // std::queue
+#include <sstream>       // std::ostringstream
 #include <stack>         // std::stack
 #include <stdexcept>     // std::invalid_argument
 #include <string>        // std::string
@@ -128,18 +129,19 @@ class compact_tree {
         CT_NODE_T add_child(const CT_NODE_T parent_node, const std::string & new_label = EMPTY_STRING, CT_LENGTH_T new_length = ZERO_LENGTH) { if((num_leaves != 0) && !is_leaf(parent_node)) { ++num_leaves; } CT_NODE_T x = create_child(parent_node,has_labels(),has_edge_lengths()); if(!(new_label.empty())) { set_label(x,new_label); } if(std::abs(new_length) > ZERO_THRESH) { set_edge_length(x,new_length); } return x; }
 
         /**
-         * Print the Newick string of the subtree rooted at a specific node
+         * Print the Newick string of the subtree rooted at a specific node (defaults to the root = entire tree)
          * @param out The output stream to print the Newick string to
          * @param node The root of the subtree to print the Newick string of
-         * @param print_semicolon `true` to print a semicolon at the end of the Newick string (to end the tree), otherwise `false` (e.g. subtree)
+         * @param include_semicolon `true` to print a semicolon at the end of the Newick string (to end the tree), otherwise `false` (e.g. subtree)
          */
-        void print_newick(std::ostream & out, CT_NODE_T node, bool print_semicolon = true);
+        void print_newick(std::ostream & out, CT_NODE_T node = ROOT_NODE, bool include_semicolon = true);
 
         /**
-         * Print the Newick string of the entire tree
-         * @param out The output stream to print the Newick string to
+         * Return the Newick string of the subtree rooted at a specific node (defaults to the root = entire tree)
+         * @param node The root of the subtree to print the Newick string of
+         * @param include_semicolon `true` to print a semicolon at the end of the Newick string (to end the tree), otherwise `false` (e.g. subtree)
          */
-        void print_newick(std::ostream & out) { print_newick(out, ROOT_NODE, true); }
+        std::string get_newick(CT_NODE_T node = ROOT_NODE, bool include_semicolon = true) { std::ostringstream oss; print_newick(oss,node,include_semicolon); return oss.str(); }
 
         /**
          * Get the total number of nodes in the tree using a O(1) lookup
@@ -504,13 +506,13 @@ class compact_tree {
 };
 
 // print Newick string (currently recursive)
-void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool print_semicolon) {
+void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool include_semicolon) {
     std::vector<CT_NODE_T>::iterator it_begin = children[node].begin(); std::vector<CT_NODE_T>::iterator it_end = children[node].end();
     for(std::vector<CT_NODE_T>::iterator it = it_begin; it != it_end; ++it) { out << ((it == it_begin) ? '(' : ','); print_newick(out, *it, false); }
     if(!is_leaf(node)) { out << ')'; }
     if(label.size() != 0) { out << label[node]; }
     if(length.size() != 0) { out << ':' << length[node]; }
-    if(print_semicolon) { out << ';'; }
+    if(include_semicolon) { out << ';'; }
 }
 
 // find the MRCA of nodes
