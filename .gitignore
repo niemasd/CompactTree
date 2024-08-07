@@ -21,6 +21,10 @@ print_topology
 html
 latex
 
+# SWIG files
+compact_tree.py
+compact_tree_wrap.cxx
+
 # Prerequisites
 *.d
 

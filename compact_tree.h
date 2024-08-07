@@ -343,7 +343,7 @@ class compact_tree {
                 levelorder_iterator(std::queue<CT_NODE_T> x, compact_tree* const tp) : q(x), tree_ptr(tp) {}
                 levelorder_iterator(const levelorder_iterator & o) : q(o.q), tree_ptr(o.tree_ptr) {}
                 levelorder_iterator & operator=(const levelorder_iterator & o) { q = o.q; tree_ptr = o.tree_ptr; return *this; }
-                levelorder_iterator & operator++() { CT_NODE_T x = q.front(); auto it_end = tree_ptr->children_end(x); for(auto it = tree_ptr->children_begin(x); it != it_end; ++it) { q.push(*it); } q.pop(); return *this; }
+                levelorder_iterator & operator++() { CT_NODE_T x = q.front(); std::vector<CT_NODE_T>::iterator it_end = tree_ptr->children[x].end(); for(std::vector<CT_NODE_T>::iterator it = tree_ptr->children[x].begin(); it != it_end; ++it) { q.push(*it); } q.pop(); return *this; }
                 levelorder_iterator operator++(int) { levelorder_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const levelorder_iterator & rhs) const { return q == rhs.q; }
                 bool operator!=(const levelorder_iterator & rhs) const { return q != rhs.q; }
@@ -493,8 +493,8 @@ class compact_tree {
 
 // print Newick string (currently recursive)
 void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool print_semicolon) {
-    auto it_begin = children_begin(node); auto it_end = children_end(node);
-    for(auto it = it_begin; it != it_end; ++it) { out << ((it == it_begin) ? '(' : ','); print_newick(out, *it, false); }
+    std::vector<CT_NODE_T>::iterator it_begin = children[node].begin(); std::vector<CT_NODE_T>::iterator it_end = children[node].end();
+    for(std::vector<CT_NODE_T>::iterator it = it_begin; it != it_end; ++it) { out << ((it == it_begin) ? '(' : ','); print_newick(out, *it, false); }
     if(!is_leaf(node)) { out << ')'; }
     if(label.size() != 0) { out << label[node]; }
     if(length.size() != 0) { out << ':' << length[node]; }
@@ -524,19 +524,20 @@ CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) c
 // calculate distance matrix
 std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> compact_tree::calc_distance_matrix() {
     // set things up
-    const size_t N = get_num_leaves(); const size_t N_MINUS_1 = N - 1;
+    const size_t NUM_NODES = get_num_nodes(); const size_t N = get_num_leaves(); const size_t N_MINUS_1 = N - 1;
     const size_t N_CHOOSE_2 = ((N%2) == 0) ? ((N/2) * N_MINUS_1) : ((N_MINUS_1/2) * N);
     std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> dm; dm.reserve(N_CHOOSE_2);
     std::unordered_map<CT_NODE_T, std::unordered_map<CT_NODE_T, double>*> leaf_dists;
-    postorder_iterator it_end = postorder_end();
-    children_iterator ch_it = children_begin(ROOT_NODE); children_iterator ch_it_2 = children_begin(ROOT_NODE); children_iterator ch_it_end = children_end(ROOT_NODE);
+    std::vector<CT_NODE_T>::iterator ch_it; std::vector<CT_NODE_T>::iterator ch_it_2; std::vector<CT_NODE_T>::iterator ch_it_end;
     CT_NODE_T curr; CT_NODE_T child; CT_NODE_T child_2; std::unordered_map<CT_NODE_T, double>* curr_leaf_dists;
     std::unordered_map<CT_NODE_T, double>* child_leaf_dists; std::unordered_map<CT_NODE_T, double>::iterator dist_it; std::unordered_map<CT_NODE_T, double>::iterator dist_it_end;
     std::unordered_map<CT_NODE_T, double>* child_leaf_dists_2; std::unordered_map<CT_NODE_T, double>::iterator dist_it_2; std::unordered_map<CT_NODE_T, double>::iterator dist_it_2_end;
 
     // calculate pairwise distances
-    for(postorder_iterator it = postorder_begin(); it != it_end; ++it) {
-        curr = *it; curr_leaf_dists = new std::unordered_map<CT_NODE_T, double>(); leaf_dists.emplace(curr, curr_leaf_dists);
+    for(curr = NUM_NODES-1; curr != NULL_NODE; --curr) {
+        curr_leaf_dists = new std::unordered_map<CT_NODE_T, double>();
+        leaf_dists.emplace(curr, curr_leaf_dists);
+
         // for leaves, they have 0 distance to themselves
         if(is_leaf(curr)) {
             curr_leaf_dists->emplace(curr, (double)0.);
@@ -545,7 +546,7 @@ std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> compact_tree::calc_distanc
         // for internal nodes:
         else {
             // calculate all pairwise distances between leaves below this node
-            for(ch_it = children_begin(curr), ch_it_end = children_end(curr); std::next(ch_it) != ch_it_end; ++ch_it) {
+            for(ch_it = children[curr].begin(), ch_it_end = children[curr].end(); std::next(ch_it) != ch_it_end; ++ch_it) {
                 child = *ch_it; child_leaf_dists = leaf_dists[child];
                 for(ch_it_2 = std::next(ch_it); ch_it_2 != ch_it_end; ++ch_it_2) {
                     child_2 = *ch_it_2; child_leaf_dists_2 = leaf_dists[child_2];
@@ -558,7 +559,7 @@ std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> compact_tree::calc_distanc
             }
 
             // calculate leaf distances to this node
-            for(ch_it = children_begin(curr), ch_it_end = children_end(curr); ch_it != ch_it_end; ++ch_it) {
+            for(ch_it = children[curr].begin(), ch_it_end = children[curr].end(); ch_it != ch_it_end; ++ch_it) {
                 child = *ch_it; child_leaf_dists = leaf_dists[child];
                 for(dist_it = child_leaf_dists->begin(), dist_it_end = child_leaf_dists->end(); dist_it != dist_it_end; ++dist_it) {
                     curr_leaf_dists->emplace(dist_it->first, dist_it->second + length[child]);
@@ -587,10 +588,10 @@ compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
     if(has_labels) { new_tree.label.emplace_back(EMPTY_STRING); }
     std::pair<CT_NODE_T, CT_NODE_T> curr;
     while(!to_copy.empty()) {
-        curr = to_copy.top(); to_copy.pop(); auto it_end = children_end(curr.first);
+        curr = to_copy.top(); to_copy.pop(); std::vector<CT_NODE_T>::iterator it_end = children[curr.first].end();
         if(has_lengths) { new_tree.length[curr.second] = length[curr.first]; }
         if(has_labels) { new_tree.label[curr.second] = label[curr.first]; }
-        for(auto it = children_begin(curr.first); it != it_end; ++it) {
+        for(std::vector<CT_NODE_T>::iterator it = children[curr.first].begin(); it != it_end; ++it) {
             to_copy.push(std::make_pair(*it, new_tree.create_child(curr.second, has_labels, has_lengths)));
         }
     }
