@@ -33,6 +33,7 @@ compact_tree_wrap.cxx
 *.lo
 *.o
 *.obj
+__pycache__
 
 # Precompiled Headers
 *.gch

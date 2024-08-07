@@ -1,11 +1,24 @@
 /* name of module */
 %module compact_tree
 
+/* SWIG includes */
+%include "stdint.i"
+
 /* ignore nested classes (SWIG doesn't support) */
+%ignore compact_tree::children_begin;
+%ignore compact_tree::children_end;
 %ignore compact_tree::children_iterator;
+%ignore compact_tree::leaves_begin;
+%ignore compact_tree::leaves_end;
 %ignore compact_tree::leaves_iterator;
+%ignore compact_tree::levelorder_begin;
+%ignore compact_tree::levelorder_end;
 %ignore compact_tree::levelorder_iterator;
+%ignore compact_tree::postorder_begin;
+%ignore compact_tree::postorder_end;
 %ignore compact_tree::postorder_iterator;
+%ignore compact_tree::preorder_begin;
+%ignore compact_tree::preorder_end;
 %ignore compact_tree::preorder_iterator;
 
 /* parts of compact_tree.h to include (everything) */

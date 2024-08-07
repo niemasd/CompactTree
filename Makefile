@@ -36,10 +36,11 @@ print_subtree_mrca: compact_tree.h example/print_subtree_mrca.cpp
 print_topology: compact_tree.h example/print_topology.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_topology example/print_topology.cpp
 clean:
-	$(RM) -r $(EXES) *.o html latex compact_tree.py compact_tree_wrap.cxx
+	$(RM) -r $(EXES) *.o *.so html latex compact_tree.py compact_tree_wrap.cxx compact_tree.h.gch __pycache__
 
 # SWIG
 swig: compact_tree.h compact_tree.i
 	make clean
 	swig -c++ -python compact_tree.i
 	g++ -fpic -c compact_tree.h compact_tree_wrap.cxx -I/usr/include/python3.10
+	g++ -shared compact_tree_wrap.o -o _compact_tree.so -lstdc++
