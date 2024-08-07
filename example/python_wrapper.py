@@ -4,7 +4,7 @@ Showcase Python wrappers. Need to first build Python wrapper with `make swig` in
 '''
 
 # imports
-from compact_tree import compact_tree # CompactTree wrapper package
+from compact_tree import compact_tree, traverse_preorder
 from sys import argv, stderr
 
 # run program
@@ -26,6 +26,16 @@ if __name__ == "__main__":
     print("  - Leaves: %s" % tree.calc_avg_bl(include_internal=False))
     print("  - Internal: %s" % tree.calc_avg_bl(include_leaves=False))
     print()
+
+    # print weighted root distances
+    print("=== Weighted Root Distances ===")
+    weighted_root_dists = [0] * tree.get_num_nodes()
+    for node in traverse_preorder(tree):
+        if not tree.is_root(node):
+            weighted_root_dists[node] = weighted_root_dists[tree.get_parent(node)] + tree.get_edge_length(node)
+        if tree.get_label(node) != "":
+            print("(%s:%f)" % (tree.get_label(node), weighted_root_dists[node]), end=' ')
+    print(); print()
 
     # print Newick
     print("=== Newick ===")

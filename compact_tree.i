@@ -32,6 +32,12 @@
 
 /* parts of compact_tree.h to include (everything) */
 %{
-    #include "compact_tree.h"
+#include "compact_tree.h"
 %}
 %include "compact_tree.h"
+
+/* helper functions for tree traversals */
+%pythoncode %{
+def traverse_preorder(tree):
+    return range(tree.get_num_nodes())
+%}
