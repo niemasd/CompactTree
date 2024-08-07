@@ -4,7 +4,7 @@ Showcase Python wrappers. Need to first build Python wrapper with `make swig` in
 '''
 
 # imports
-from compact_tree import compact_tree, traverse_leaves, traverse_levelorder, traverse_postorder, traverse_preorder
+from CompactTree import compact_tree, traverse_leaves, traverse_levelorder, traverse_postorder, traverse_preorder
 from sys import argv, stderr
 
 # run program
