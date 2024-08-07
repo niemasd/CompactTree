@@ -51,4 +51,4 @@ twine: CompactTree/compact_tree.h CompactTree/compact_tree.i
 	#sed -i 's/from . import _CompactTree/compact_tree.import _compact_tree/g' compact_tree.py
 	#mv compact_tree.py CompactTree/
 	python3 setup.py sdist bdist_wheel
-	#twine upload dist/*.tar.gz
+	twine upload dist/*.tar.gz
