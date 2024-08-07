@@ -65,6 +65,12 @@ if __name__ == "__main__":
             print("(%s,%s,%f)" % (tree.get_label(leaves[i]), tree.get_label(leaves[j]), tree.calc_dist(leaves[i], leaves[j])), end=' ')
     print(); print()
 
+    # print distance matrix
+    print("=== Pairwise Leaf Distances (distance matrix) ===")
+    for node_pair, d in tree.calc_distance_matrix():
+        print("(%s,%s,%f)" % (tree.get_label(node_pair[0]), tree.get_label(node_pair[1]), d), end=' ')
+    print(); print()
+
     # print Newick
     print("=== Newick ===")
     print(tree.get_newick())
