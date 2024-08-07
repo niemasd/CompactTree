@@ -1,4 +1,2 @@
 include README.md
 include LICENSE
-include compact_tree.h
-include compact_tree.py

@@ -20,6 +20,7 @@ print_topology
 *.txt
 html
 latex
+*.bak
 
 # SWIG files
 compact_tree.py

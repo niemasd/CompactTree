@@ -11,45 +11,44 @@ EXES=copy_tree load_tree load_tree_string print_distance_matrix print_distances 
 
 # compile
 all: $(EXES)
-copy_tree: compact_tree.h example/copy_tree.cpp
+copy_tree: CompactTree/compact_tree.h example/copy_tree.cpp
 	$(CXX) $(RELEASEFLAGS) -o copy_tree example/copy_tree.cpp
-load_tree: compact_tree.h example/load_tree.cpp
+load_tree: CompactTree/compact_tree.h example/load_tree.cpp
 	$(CXX) $(RELEASEFLAGS) -o load_tree example/load_tree.cpp
-load_tree_string: compact_tree.h example/load_tree_string.cpp
+load_tree_string: CompactTree/compact_tree.h example/load_tree_string.cpp
 	$(CXX) $(RELEASEFLAGS) -o load_tree_string example/load_tree_string.cpp
-print_distance_matrix: compact_tree.h example/print_distance_matrix.cpp
+print_distance_matrix: CompactTree/compact_tree.h example/print_distance_matrix.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_distance_matrix example/print_distance_matrix.cpp
-print_distances: compact_tree.h example/print_distances.cpp
+print_distances: CompactTree/compact_tree.h example/print_distances.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_distances example/print_distances.cpp
-print_mrca: compact_tree.h example/print_mrca.cpp
+print_mrca: CompactTree/compact_tree.h example/print_mrca.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_mrca example/print_mrca.cpp
-print_node_data: compact_tree.h example/print_node_data.cpp
+print_node_data: CompactTree/compact_tree.h example/print_node_data.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_node_data example/print_node_data.cpp
-print_num_descendants: compact_tree.h example/print_num_descendants.cpp
+print_num_descendants: CompactTree/compact_tree.h example/print_num_descendants.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_num_descendants example/print_num_descendants.cpp
-print_root_dists: compact_tree.h example/print_root_dists.cpp
+print_root_dists: CompactTree/compact_tree.h example/print_root_dists.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_root_dists example/print_root_dists.cpp
-print_stats: compact_tree.h example/print_stats.cpp
+print_stats: CompactTree/compact_tree.h example/print_stats.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_stats example/print_stats.cpp
-print_subtree_mrca: compact_tree.h example/print_subtree_mrca.cpp
+print_subtree_mrca: CompactTree/compact_tree.h example/print_subtree_mrca.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_subtree_mrca example/print_subtree_mrca.cpp
-print_topology: compact_tree.h example/print_topology.cpp
+print_topology: CompactTree/compact_tree.h example/print_topology.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_topology example/print_topology.cpp
 clean:
-	$(RM) -r $(EXES) *.o *.so html latex compact_tree.py compact_tree_wrap.cxx compact_tree.h.gch __pycache__ *.egg-info build dist CompactTree/compact_tree.py CompactTree/__pycache__
+	$(RM) -r $(EXES) *.o *.so html latex compact_tree.py CompactTree/compact_tree.py *.cxx CompactTree/*.cxx *.gch CompactTree/*.gch CompactTree/*.so __pycache__ *.egg-info build dist
 
 # SWIG
-swig: compact_tree.h compact_tree.i
+swig: CompactTree/compact_tree.h CompactTree/compact_tree.i
 	make clean
-	swig -c++ -python compact_tree.i
-	g++ -fpic -c compact_tree.h compact_tree_wrap.cxx -I/usr/include/python3.10
+	swig -c++ -python CompactTree/compact_tree.i
+	g++ -fpic -c CompactTree/compact_tree.h compact_tree_wrap.cxx -I/usr/include/python3.10
 	g++ -shared compact_tree_wrap.o -o _compact_tree.so -lstdc++
 
 # Twine
-twine: compact_tree.h compact_tree.i
-	make swig
-	sed -i 's/from . import _compact_tree/import _compact_tree/g' compact_tree.py
-	mv compact_tree.py CompactTree/
-	python3 setup.py sdist
-	python3 setup.py bdist_wheel --universal
-	twine upload dist/*
+twine: CompactTree/compact_tree.h CompactTree/compact_tree.i
+	#swig -c++ -python CompactTree/compact_tree.i
+	#sed -i 's/from . import _CompactTree/compact_tree.import _compact_tree/g' compact_tree.py
+	#mv compact_tree.py CompactTree/
+	python3 setup.py sdist bdist_wheel
+	#twine upload dist/*.tar.gz
