@@ -5,7 +5,7 @@ Showcase Python wrappers. Need to first build Python wrapper with `make swig` in
 
 # imports
 from compact_tree import compact_tree # CompactTree wrapper package
-from sys import argv, stderr, stdout
+from sys import argv, stderr
 
 # run program
 if __name__ == "__main__":
@@ -25,12 +25,16 @@ if __name__ == "__main__":
     print("- Average Branch Length: %s" % tree.calc_avg_bl())
     print("  - Leaves: %s" % tree.calc_avg_bl(include_internal=False))
     print("  - Internal: %s" % tree.calc_avg_bl(include_leaves=False))
+    print()
 
     # print Newick
     print("=== Newick ===")
-    tree.print_newick(stdout)
+    print(tree.get_newick())
+    print()
 
     # print topology
     print("=== Topology ===")
-    # TODO CLEAR
-    tree.print_newick(stdout)
+    tree.clear_labels()
+    tree.clear_edge_lengths()
+    print(tree.get_newick())
+    print()

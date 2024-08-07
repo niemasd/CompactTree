@@ -10,7 +10,7 @@
 /* SWIG simple type conversions */
 %template(UIntVector) std::vector<unsigned int>;
 
-/* ignore nested classes (SWIG doesn't support) */
+/* ignore nested classes (SWIG doesn't support them) */
 %ignore compact_tree::children_begin;
 %ignore compact_tree::children_end;
 %ignore compact_tree::children_iterator;
@@ -26,6 +26,9 @@
 %ignore compact_tree::preorder_begin;
 %ignore compact_tree::preorder_end;
 %ignore compact_tree::preorder_iterator;
+
+/* ignore things that don't convert properly */
+%ignore compact_tree::print_newick;
 
 /* parts of compact_tree.h to include (everything) */
 %{
