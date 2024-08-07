@@ -4,7 +4,7 @@ Showcase Python wrappers. Need to first build Python wrapper with `make swig` in
 '''
 
 # imports
-from compact_tree import compact_tree, traverse_levelorder, traverse_postorder, traverse_preorder
+from compact_tree import compact_tree, traverse_leaves, traverse_levelorder, traverse_postorder, traverse_preorder
 from sys import argv, stderr
 
 # run program
@@ -57,6 +57,14 @@ if __name__ == "__main__":
             print("(%s:%f)" % (tree.get_label(node), weighted_root_dists[node]), end=' ')
     print(); print()
 
+    # print pairwise leaf distances calculated individually
+    print("=== Pairwise Leaf Distances (calculated individually) ===")
+    leaves = list(traverse_leaves(tree))
+    for i in range(len(leaves)-1):
+        for j in range(i+1, len(leaves)):
+            print("(%s,%s,%f)" % (tree.get_label(leaves[i]), tree.get_label(leaves[j]), tree.calc_dist(leaves[i], leaves[j])), end=' ')
+    print(); print()
+
     # print Newick
     print("=== Newick ===")
     print(tree.get_newick())
@@ -64,7 +72,6 @@ if __name__ == "__main__":
 
     # print topology
     print("=== Topology ===")
-    tree.clear_labels()
-    tree.clear_edge_lengths()
+    tree.clear_labels(); tree.clear_edge_lengths() # modifies the tree; run last
     print(tree.get_newick())
     print()
