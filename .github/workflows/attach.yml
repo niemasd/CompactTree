@@ -12,7 +12,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: compact_tree.h
+          file: CompactTree/compact_tree.h
           asset_name: compact_tree.h
           tag: ${{ github.ref }}
           overwrite: true
