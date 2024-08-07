@@ -11,6 +11,7 @@
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::ostream
+#include <utility>       // std::make_pair, std::pair
 #include <queue>         // std::queue
 #include <sstream>       // std::ostringstream
 #include <stack>         // std::stack
@@ -500,9 +501,9 @@ class compact_tree {
 
         /**
          * Calculate the (weighted) distance matrix between all pairs of leaves
-         * @return A `vector<tuple>` containing all pairwise leaf distances as `(u, v, distance)`
+         * @return A `vector<pair<pair<node,node>,double>>` containing all pairwise leaf distances as `((u,v), distance)`
          */
-        std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> calc_distance_matrix();
+        std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> calc_distance_matrix();
 };
 
 // print Newick string (currently recursive)
@@ -536,11 +537,11 @@ CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) c
 }
 
 // calculate distance matrix
-std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> compact_tree::calc_distance_matrix() {
+std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tree::calc_distance_matrix() {
     // set things up
     const size_t NUM_NODES = get_num_nodes(); const size_t N = get_num_leaves(); const size_t N_MINUS_1 = N - 1;
     const size_t N_CHOOSE_2 = ((N%2) == 0) ? ((N/2) * N_MINUS_1) : ((N_MINUS_1/2) * N);
-    std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> dm; dm.reserve(N_CHOOSE_2);
+    std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> dm; dm.reserve(N_CHOOSE_2);
     std::unordered_map<CT_NODE_T, std::unordered_map<CT_NODE_T, double>*> leaf_dists;
     std::vector<CT_NODE_T>::iterator ch_it; std::vector<CT_NODE_T>::iterator ch_it_2; std::vector<CT_NODE_T>::iterator ch_it_end;
     CT_NODE_T curr; CT_NODE_T child; CT_NODE_T child_2; std::unordered_map<CT_NODE_T, double>* curr_leaf_dists;
@@ -566,7 +567,7 @@ std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> compact_tree::calc_distanc
                     child_2 = *ch_it_2; child_leaf_dists_2 = leaf_dists[child_2];
                     for(dist_it = child_leaf_dists->begin(), dist_it_end = child_leaf_dists->end(); dist_it != dist_it_end; ++dist_it) {
                         for(dist_it_2 = child_leaf_dists_2->begin(), dist_it_2_end = child_leaf_dists_2->end(); dist_it_2 != dist_it_2_end; ++dist_it_2) {
-                            dm.emplace_back(std::make_tuple(dist_it->first, dist_it_2->first, dist_it->second + dist_it_2->second + get_edge_length(child) + get_edge_length(child_2)));
+                            dm.emplace_back(std::make_pair(std::make_pair(dist_it->first,dist_it_2->first), dist_it->second + dist_it_2->second + get_edge_length(child) + get_edge_length(child_2)));
                         }
                     }
                 }

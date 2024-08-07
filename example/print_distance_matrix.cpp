@@ -14,10 +14,10 @@ int main(int argc, char** argv) {
     compact_tree tree(argv[1]);
 
     // calculate and print the pairwise distance matrix
-    std::vector<std::tuple<CT_NODE_T, CT_NODE_T, double>> dm = tree.calc_distance_matrix();
+    std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> dm = tree.calc_distance_matrix();
     std::cout << "u\tv\td" << std::endl;
-    for(std::tuple<CT_NODE_T, CT_NODE_T, double> curr : dm) {
-        std::cout << tree.get_label(std::get<0>(curr)) << '\t' << tree.get_label(std::get<1>(curr)) << '\t' << std::get<2>(curr) << std::endl;
+    for(std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double> curr : dm) {
+        std::cout << tree.get_label(curr.first.first) << '\t' << tree.get_label(curr.first.second) << '\t' << curr.second << std::endl;
     }
     return 0;
 }
