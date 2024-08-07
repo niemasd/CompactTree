@@ -36,7 +36,7 @@ print_subtree_mrca: compact_tree.h example/print_subtree_mrca.cpp
 print_topology: compact_tree.h example/print_topology.cpp
 	$(CXX) $(RELEASEFLAGS) -o print_topology example/print_topology.cpp
 clean:
-	$(RM) -r $(EXES) *.o *.so html latex compact_tree.py compact_tree_wrap.cxx compact_tree.h.gch __pycache__ *.egg-info
+	$(RM) -r $(EXES) *.o *.so html latex compact_tree.py compact_tree_wrap.cxx compact_tree.h.gch __pycache__ *.egg-info build dist CompactTree/compact_tree.py CompactTree/__pycache__
 
 # SWIG
 swig: compact_tree.h compact_tree.i
@@ -44,3 +44,12 @@ swig: compact_tree.h compact_tree.i
 	swig -c++ -python compact_tree.i
 	g++ -fpic -c compact_tree.h compact_tree_wrap.cxx -I/usr/include/python3.10
 	g++ -shared compact_tree_wrap.o -o _compact_tree.so -lstdc++
+
+# Twine
+twine: compact_tree.h compact_tree.i
+	make swig
+	sed -i 's/from . import _compact_tree/import _compact_tree/g' compact_tree.py
+	mv compact_tree.py CompactTree/
+	python3 setup.py sdist
+	python3 setup.py bdist_wheel --universal
+	twine upload dist/*

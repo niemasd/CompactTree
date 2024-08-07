@@ -24,7 +24,11 @@ class BuildSwigExtension(build_ext):
             '-o', os.path.join(self.build_temp, 'compact_tree_wrap.cxx'),
             os.path.join(this_dir, 'compact_tree.i')
         ])
-        shutil.copy2(os.path.join(self.build_temp, 'compact_tree.py'), os.path.join(this_dir, 'compact_tree'))
+        compact_tree_py = os.path.join(self.build_temp, 'compact_tree.py')
+        #f = open(compact_tree_py,'rt'); tmp = f.read(); f.close()
+        #tmp = tmp.replace('from . import _compact_tree', 'import _compact_tree')
+        #f = open(compact_tree_py,'wt'); f.write(tmp); f.close()
+        shutil.copy2(compact_tree_py, os.path.join(this_dir, 'CompactTree'))
         super().run()
 
     def build_extensions(self):
@@ -34,7 +38,7 @@ class BuildSwigExtension(build_ext):
         super().build_extensions()
 
 setup(
-    name='compact_tree',
+    name='CompactTree',
     version=compact_tree_version,
     author='Niema Moshiri',
     author_email='niemamoshiri@gmail.com',

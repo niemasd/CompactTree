@@ -36,6 +36,7 @@ compact_tree_wrap.cxx
 __pycache__
 *.egg-info
 build
+dist
 
 # Precompiled Headers
 *.gch
