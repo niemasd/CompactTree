@@ -1,1 +1,1 @@
-../compact_tree.h
+../CompactTree/compact_tree.h
