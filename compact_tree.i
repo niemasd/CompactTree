@@ -2,13 +2,16 @@
 %module compact_tree
 
 /* SWIG includes */
+%include "std_pair.i"
 %include "std_string.i"
 %include "std_vector.i"
 %include "stdint.i"
 %include "typemaps.i"
 
 /* SWIG simple type conversions */
-%template(UIntVector) std::vector<unsigned int>;
+%template(VectorUInt) std::vector<unsigned int>;
+%template(PairDist) std::pair<std::pair<std::uint32_t,std::uint32_t>,double>;
+%template(VectorPairDist) std::vector<std::pair<std::pair<std::uint32_t,std::uint32_t>,double>>;
 
 /* ignore nested classes (SWIG doesn't support them) */
 %ignore compact_tree::children_begin;
