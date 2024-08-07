@@ -2,7 +2,13 @@
 %module compact_tree
 
 /* SWIG includes */
+%include "std_string.i"
+%include "std_vector.i"
 %include "stdint.i"
+%include "typemaps.i"
+
+/* SWIG type conversions */
+%template(UIntVector) std::vector<unsigned int>;
 
 /* ignore nested classes (SWIG doesn't support) */
 %ignore compact_tree::children_begin;
