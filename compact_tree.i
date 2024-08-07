@@ -7,7 +7,7 @@
 %include "stdint.i"
 %include "typemaps.i"
 
-/* SWIG type conversions */
+/* SWIG simple type conversions */
 %template(UIntVector) std::vector<unsigned int>;
 
 /* ignore nested classes (SWIG doesn't support) */

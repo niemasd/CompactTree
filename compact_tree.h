@@ -200,6 +200,12 @@ class compact_tree {
         bool has_edge_lengths() const { return length.size() != 0; }
 
         /**
+         * Clear all edge lengths in this tree
+         * @param shrink `true` to deallocate the memory that was allocated to store the edge lengths, otherwise `false`
+         */
+        void clear_edge_lengths(bool shrink = true) { if(!length.empty()) { length.clear(); if(shrink) { length.shrink_to_fit(); } } }
+
+        /**
          * Get the incident edge length of a node
          * @param node The node to get the incident edge length of
          * @return The incident edge length of `node`
@@ -225,6 +231,12 @@ class compact_tree {
          * @return `true` if this tree is storing labels, otherwise `false`
          */
         bool has_labels() const { return label.size() != 0; }
+
+        /**
+         * Clear all labels in this tree
+         * @param shrink `true` to deallocate the memory that was allocated to store the labels, otherwise `false`
+         */
+        void clear_labels(bool shrink = true) { if(!label.empty()) { label.clear(); if(shrink) { label.shrink_to_fit(); } } }
 
         /**
          * Get the label of a node
