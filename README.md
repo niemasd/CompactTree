@@ -25,6 +25,16 @@ By default, CompactTree represents nodes (type `CT_NODE_T`) as 32-bit unsigned i
 
 For more examples, take a look at the simple example programs in the [`example`](https://github.com/niemasd/CompactTree/tree/main/example) folder as well as the [Cookbook](https://niema.net/CompactTree/md_example_cookbook.html). Full documentation can be found at: https://niema.net/CompactTree
 
+### Python Wrapper
+
+While we *strongly* recommend the native C++ `compact_tree` class for performance, we also provide a [SWIG](https://www.swig.org/) Python wrapper via the [`CompactTree` package](https://pypi.org/project/CompactTree), which can be installed using `pip`:
+
+```python
+pip install CompactTree
+```
+
+Example usage of the Python wrapper can be found in the [`python_wrapper.py`](https://github.com/niemasd/CompactTree/blob/main/example/python_wrapper.py) example script as well as in the [Cookbook](https://niema.net/CompactTree/md_example_cookbook.html).
+
 ## Citing CompactTree
 If you use CompactTree in your work, please cite:
 
