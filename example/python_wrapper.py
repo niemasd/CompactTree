@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 '''
-Showcase Python wrappers. Need to first build Python wrapper with `make swig` in root of the repo.
+Showcase Python wrappers
 '''
 
 # imports
