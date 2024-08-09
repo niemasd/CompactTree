@@ -1,5 +1,7 @@
 # Cookbook
 
+[TOC]
+
 This page contains many examples of CompactTree usage. Rather than showing complete programs (which would require the boilerplate code of `#include` statements, function headers, and function return values), these examples will be short self-contained code snippets that can be incorporated into larger functions/programs (see the [`example`](https://github.com/niemasd/CompactTree/tree/main/example) directory of the CompactTree repository for complete example programs). In all of the examples below, `tree` is a `compact_tree` object.
 
 ## Loading a Tree
@@ -234,3 +236,72 @@ for(auto it = tree.leaves_begin(); it != tree.leaves_end(); ++it) {
 ```
 
 Currently, leaves will be visited in the order they appear in the original Newick string.
+
+## Python Wrapper
+
+While we *strongly* recommend using the native C++ `compact_tree` class for performance, we also provide a [SWIG](https://www.swig.org/) Python wrapper via the [`CompactTree` package](https://pypi.org/project/CompactTree), which can be installed using `pip`:
+
+```bash
+pip install CompactTree
+```
+
+In this section of the cookbook, we will briefly summarize how to use the Python wrapper, and we will highlight key distinctions in usage with respect to the C++ `compact_tree` class. Please see the [`python_wrapper.py`](https://github.com/niemasd/CompactTree/blob/main/example/python_wrapper.py) example script we provide as well.
+
+### Loading a Tree
+
+A tree can be loaded from a Newick file or string as follows, which matches the 5-argument constructor of the `compact_tree` C++ class (see above):
+
+```py
+from CompactTree import compact_tree
+tree_from_file = compact_tree(tree_filename)
+tree_from_string = compact_tree(tree_string, False) # specify `False` for the second argument (`is_fn`)
+```
+
+### Traversing a Tree
+
+Because [SWIG](https://www.swig.org/) does not support nested classes, we were not able to directly wrap around the iterators implemented in the `compact_tree` class. Instead, we have defined Python-specific [generators](https://wiki.python.org/moin/Generators) for each type of tree traversal:
+
+```py
+from CompactTree import compact_tree, traverse_leaves, traverse_levelorder, traverse_postorder, traverse_preorder
+tree = compact_tree(tree_filename)
+for node in traverse_preorder(tree):
+    pass # visit `node` (pre-order)
+for node in traverse_postorder(tree):
+    pass # visit `node` (post-order)
+for node in traverse_levelorder(tree):
+    pass # visit `node` (level-order)
+for node in traverse_leaves(tree):
+    pass # visit `node` (which is a leaf)
+```
+
+### Everything Else
+
+All other functionality should perfectly match the member functions of the C++ `compact_tree` class. Variable types are automatically translated between Python and C++ by [SWIG](https://www.swig.org/) without any need for manual user intervention. Here are a few examples (not comprehensive; see `compact_tree` C++ member functions for complete list):
+
+```py
+# load tree
+from CompactTree import compact_tree
+tree = compact_tree(tree_filename)
+
+# number of nodes
+num_nodes = tree.get_num_nodes()
+num_leaves = tree.get_num_leaves()
+num_internal = tree.get_num_internal()
+
+# total branch length
+total_bl = tree.calc_total_bl()
+total_bl_leaves = tree.calc_total_bl(include_internal=False)
+total_bl_internal = tree.calc_total_bl(include_leaves=False)
+
+# average branch length
+avg_bl = tree.calc_avg_bl()
+avg_bl_leaves = tree.calc_avg_bl(include_internal=False)
+avg_bl_internal = tree.calc_avg_bl(include_leaves=False)
+
+# pairwise distance
+distance_x_y = tree.calc_dist(x, y) # `x` and `y` are nodes
+distance_matrix = tree.calc_distance_matrix()
+
+# print Newick
+print(tree.get_newick())
+```
