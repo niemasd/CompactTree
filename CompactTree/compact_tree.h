@@ -11,7 +11,7 @@
 #include <cstring>       // strcmp()
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::ostream
-#include <utility>       // std::make_pair, std::pair
+#include <limits>        // std::numeric_limits<T>::max
 #include <queue>         // std::queue
 #include <sstream>       // std::ostringstream
 #include <stack>         // std::stack
@@ -21,7 +21,7 @@
 #include <unistd.h>      // read()
 #include <unordered_map> // std::unordered_map
 #include <unordered_set> // std::unordered_set
-#include <utility>       // std::pair
+#include <utility>       // std::make_pair, std::pair
 #include <vector>        // std::vector
 
 // define node type, which is a fixed-width unsigned integer (default is 32-bit)
@@ -43,12 +43,12 @@
 #endif
 
 // general constants
-#define COMPACTTREE_VERSION "0.0.7"
+#define COMPACTTREE_VERSION "0.0.8"
 #define IO_BUFFER_SIZE 16384
 #define STR_BUFFER_SIZE 16384
 const std::string EMPTY_STRING = "";
 const CT_NODE_T ROOT_NODE = (CT_NODE_T)0;
-const CT_NODE_T NULL_NODE = (CT_NODE_T)(-1);
+const CT_NODE_T NULL_NODE = std::numeric_limits<CT_NODE_T>::max();
 const CT_LENGTH_T ZERO_LENGTH = (CT_LENGTH_T)0.;
 const CT_LENGTH_T ZERO_THRESH = (CT_LENGTH_T)0.000001;
 
