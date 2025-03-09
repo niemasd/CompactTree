@@ -38,4 +38,4 @@ Example usage of the Python wrapper can be found in the [`python_wrapper.py`](ht
 ## Citing CompactTree
 If you use CompactTree in your work, please cite:
 
-> **Moshiri N** (2024). "CompactTree: A lightweight header-only C++ library for ultra-large phylogenetics." *bioRxiv*. [doi:10.1101/2024.07.15.603593](https://doi.org/10.1101/2024.07.15.603593)
+> **Moshiri N** (2025). "CompactTree: A lightweight header-only C++ library for ultra-large phylogenetics." *Gigabyte*. [doi:10.46471/gigabyte.152](https://doi.org/10.46471/gigabyte.152)
