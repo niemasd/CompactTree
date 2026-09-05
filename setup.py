@@ -36,7 +36,7 @@ class build_ext(build_ext_orig):
 
 # package info
 setup(
-    name='CompactTree',
+    name='compacttree',
     version=compact_tree_version,
     author='Niema Moshiri',
     author_email='niemamoshiri@gmail.com',
