@@ -10,8 +10,8 @@
 
 /* SWIG simple type conversions */
 %template(VectorUInt) std::vector<unsigned int>;
-%template(PairDist) std::pair<std::pair<std::uint32_t,std::uint32_t>,double>;
-%template(VectorPairDist) std::vector<std::pair<std::pair<std::uint32_t,std::uint32_t>,double>>;
+%template(PairDist) std::pair<std::pair<unsigned int,unsigned int>,double>;
+%template(VectorPairDist) std::vector<std::pair<std::pair<unsigned int,unsigned int>,double>>;
 
 /* ignore nested classes (SWIG doesn't support them) */
 %ignore compact_tree::children_begin;
