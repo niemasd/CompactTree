@@ -42,7 +42,7 @@ clean:
 swig: CompactTree/compact_tree.h CompactTree/compact_tree.i
 	make clean
 	swig -c++ -python CompactTree/compact_tree.i
-	g++ -fpic -c CompactTree/compact_tree.h CompactTree/compact_tree_wrap.cxx -I/usr/include/python3.10
+	g++ -fpic -c CompactTree/compact_tree.h CompactTree/compact_tree_wrap.cxx $(shell python3-config --includes)
 	g++ -shared compact_tree_wrap.o -o CompactTree/_compact_tree.so -lstdc++
 
 # Twine
