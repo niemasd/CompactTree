@@ -258,6 +258,7 @@ class compact_tree {
          * @param include_internal `true` to include internal nodes in the label replacement, otherwise `false` to only replace leaf labels
          */
         void replace_labels(const std::unordered_map<std::string, std::string> & label_map, bool include_internal = true) {
+            if(!has_labels()) { return; }
             const size_t NUM_NODES = get_num_nodes(); CT_NODE_T curr; std::unordered_map<std::string,std::string>::const_iterator it; std::unordered_map<std::string,std::string>::const_iterator it_end = label_map.cend();
             for(curr = ROOT_NODE; curr < NUM_NODES; ++curr) {
                 if(is_leaf(curr) || include_internal) {
