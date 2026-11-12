@@ -45,7 +45,6 @@
 // general constants
 #define COMPACTTREE_VERSION "1.1.0"
 #define IO_BUFFER_SIZE 16384
-#define STR_BUFFER_SIZE 16384
 const std::string EMPTY_STRING = "";
 const CT_NODE_T ROOT_NODE = (CT_NODE_T)0;
 const CT_NODE_T NULL_NODE = std::numeric_limits<CT_NODE_T>::max();
@@ -620,7 +619,7 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
     size_t bytes_read = 0; size_t i; // variables to help with reading
     const size_t INPUT_LEN = strlen(input); size_t input_i = 0; // variables to help with reading from Newick string specifically
     char buf[IO_BUFFER_SIZE + 1]; // buffer for reading
-    char str_buf[STR_BUFFER_SIZE] = {}; size_t str_buf_i = 0; // helper string buffer
+    std::string str_buf; // helper string buffer
     if(is_fn) {
         fd = open(input, O_RDONLY);
         if(fd == -1) {
@@ -644,7 +643,7 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
         bool parse_label_double = false;                    // parsing a double-quote label right now?
         bool parse_label_quote_pending = false;             // encountered a possible closing quote (might be escaped)
         bool parse_comment = false;                         // parsing a comment [...] right now?
-        str_buf_i = 0;
+        str_buf.clear();
 
         // initialize storage for the current pass
         if(pass == 0) {
@@ -697,7 +696,7 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
                         case ',':
                         case ')':
                         case ';':
-                            if((pass == 1) && store_lengths) { str_buf[str_buf_i] = (char)0; length[curr_node] = PARSE_LENGTH_FROM_C_STR(str_buf); }
+                            if((pass == 1) && store_lengths) { length[curr_node] = PARSE_LENGTH_FROM_C_STR(str_buf.c_str()); }
                             parse_length = false; --i; break; // need to re-read this character
 
                         // edge comment (ignore for now)
@@ -706,8 +705,7 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
 
                         // character within edge length
                         default:
-                            if((pass == 1) && store_lengths) { str_buf[str_buf_i++] = buf[i]; }
-                            break;
+                            if((pass == 1) && store_lengths) { str_buf.push_back(buf[i]); } break;
                     }
                 }
 
@@ -717,15 +715,14 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
                     if(parse_label_single || parse_label_double) {
                         if(parse_label_quote_pending) {
                             if((parse_label_single && (buf[i] == '\'')) || (parse_label_double && (buf[i] == '"'))) {
-                                if((pass == 1) && store_labels) { str_buf[str_buf_i++] = buf[i]; }
-                                parse_label_quote_pending = false;
+                                if((pass == 1) && store_labels) { str_buf.push_back(buf[i]); }; parse_label_quote_pending = false;
                             } else {
                                 parse_label = false; parse_label_single = false; parse_label_double = false; parse_label_quote_pending = false; --i;
                             }
                         } else if((parse_label_single && (buf[i] == '\'')) || (parse_label_double && (buf[i] == '"'))) {
                             parse_label_quote_pending = true;
                         } else {
-                            if((pass == 1) && store_labels) { str_buf[str_buf_i++] = buf[i]; }
+                            if((pass == 1) && store_labels) { str_buf.push_back(buf[i]); }
                         }
                     }
 
@@ -735,14 +732,13 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
                             case ':': case ',': case ')': case ';':
                                 parse_label = false; --i; break; // finished label, so need to re-read this character
                             default:
-                                if((pass == 1) && store_labels) { str_buf[str_buf_i++] = buf[i]; } break;
+                                if((pass == 1) && store_labels) { str_buf.push_back(buf[i]); }; break;
                         }
                     }
 
                     // if we finished parsing the label, finalize it
                     if(!parse_label) {
-                        if((pass == 1) && store_labels) { str_buf[str_buf_i] = (char)0; label[curr_node] = str_buf; }
-                        parse_label = false;
+                        if((pass == 1) && store_labels) { label[curr_node] = str_buf; }; parse_label = false;
                     }
                 }
 
@@ -830,22 +826,21 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
 
                         // edge length
                         case ':':
-                            if(store_lengths) { str_buf_i = 0; }
-                            parse_length = true; break;
+                            if(store_lengths) { str_buf.clear(); } parse_length = true; break;
 
                         // about to parse a node label in single quotes ('')
                         case '\'': 
-                            if(store_labels) { str_buf_i = 0; }
+                            if(store_labels) { str_buf.clear(); }
                             parse_label_quote_pending = false; parse_label = true; parse_label_single = true; break;
 
                         // about to parse a node label in double quotes ("")
                         case '"':
-                            if(store_labels) { str_buf_i = 0; }
+                            if(store_labels) { str_buf.clear(); }
                             parse_label_quote_pending = false; parse_label = true; parse_label_double = true; break;
 
                         // about to start a node label without quotes
                         default:
-                            if(store_labels) { str_buf_i = 0; }
+                            if(store_labels) { str_buf.clear(); }
                             parse_label = true; --i; break; // need to re-read this character (it's part of the label)
                     }
                 }
