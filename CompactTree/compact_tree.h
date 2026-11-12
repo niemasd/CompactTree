@@ -616,6 +616,7 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
 
     // set up file input: https://stackoverflow.com/a/17925143/2134991
     int fd = -1;
+    struct fd_guard { int* fd; ~fd_guard() { if(*fd != -1) { close(*fd); } } } close_fd{&fd};
     size_t bytes_read = 0; size_t i; // variables to help with reading
     const size_t INPUT_LEN = strlen(input); size_t input_i = 0; // variables to help with reading from Newick string specifically
     char buf[IO_BUFFER_SIZE + 1]; // buffer for reading
@@ -763,7 +764,6 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
                             if((parse_node != ROOT_NODE) || (next_parse_node != num_children.size()) || (next_node != num_children.size())) {
                                 throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
                             }
-                            if(is_fn) { close(fd); }
                             return;
 
                         // go to new child
