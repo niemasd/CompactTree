@@ -9,6 +9,7 @@
 #include <cstdint>       // std::uint32_t, std::uint64_t
 #include <cstdlib>       // std::abs, std::atof
 #include <cstring>       // strcmp()
+#include <cerrno>        // errno
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::ostream
 #include <limits>        // std::numeric_limits<T>::max
@@ -661,7 +662,11 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
         while(!parse_done) {
             // either read from file or from Newick C string
             if(is_fn) {
-                bytes_read = read(fd, buf, IO_BUFFER_SIZE);
+                ssize_t read_result;
+                do {
+                    read_result = read(fd, buf, IO_BUFFER_SIZE);
+                } while((read_result == -1) && (errno == EINTR));
+                bytes_read = (read_result < 0) ? (size_t)(-1) : (size_t)read_result;
             } else {
                 if(input_i == INPUT_LEN) { // finished parsing string
                     bytes_read = 0;
