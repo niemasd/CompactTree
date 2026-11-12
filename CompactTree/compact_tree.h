@@ -494,7 +494,19 @@ class compact_tree {
 // print Newick string (currently recursive)
 void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool include_semicolon) {
     if(!is_leaf(node)) { for(CT_NODE_T child = first_child[node]; child <= last_child[node]; ++child) { out << ((child == first_child[node]) ? '(' : ','); print_newick(out, child, false); } out << ')'; }
-    if(label.size() != 0) { out << label[node]; }
+    if(label.size() != 0) {
+       const std::string & curr_label = label[node];
+        if(curr_label.find_first_of(" \t\n\r\f\v()[],:;'\"") != std::string::npos) {
+            out << '\'';
+            for(size_t i = 0; i < curr_label.size(); ++i) {
+                if(curr_label[i] == '\'') { out << "''"; }
+                else { out << curr_label[i]; }
+            }
+            out << '\'';
+        } else {
+            out << curr_label;
+        }
+    }
     if(length.size() != 0) { out << ':' << length[node]; }
     if(include_semicolon) { out << ';'; }
 }
@@ -619,17 +631,18 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
     // parse the Newick string twice: first to count children, then to create the tree
     for(size_t pass = 0; pass < 2; ++pass) {
         // set up initial Newick parsing state
-        size_t curr_node = ROOT_NODE; // current node (temporary ID in pass 1, final ID in pass 2)
-        size_t parse_node = ROOT_NODE; // temporary preorder ID (pass 2 only)
-        size_t next_parse_node = 1; // next temporary preorder ID (pass 2 only)
-        size_t next_node = 1; // next available final node ID (pass 2 only)
+        size_t curr_node = ROOT_NODE;                       // current node (temporary ID in pass 1, final ID in pass 2)
+        size_t parse_node = ROOT_NODE;                      // temporary preorder ID (pass 2 only)
+        size_t next_parse_node = 1;                         // next temporary preorder ID (pass 2 only)
+        size_t next_node = 1;                               // next available final node ID (pass 2 only)
         std::stack<std::pair<size_t, size_t>> parse_parent; // first = parent ID; second = temporary preorder ID
-        bool parse_done = false; // finished parsing current pass?
-        bool parse_length = false; // parsing a length right now?
-        bool parse_label = false; // parsing a label right now?
-        bool parse_label_single = false; // parsing a single-quote label right now?
-        bool parse_label_double = false; // parsing a double-quote label right now?
-        bool parse_comment = false; // parsing a comment [...] right now?
+        bool parse_done = false;                            // finished parsing current pass?
+        bool parse_length = false;                          // parsing a length right now?
+        bool parse_label = false;                           // parsing a label right now?
+        bool parse_label_single = false;                    // parsing a single-quote label right now?
+        bool parse_label_double = false;                    // parsing a double-quote label right now?
+        bool parse_label_quote_pending = false;             // encountered a possible closing quote (might be escaped)
+        bool parse_comment = false;                         // parsing a comment [...] right now?
         str_buf_i = 0;
 
         // initialize storage for the current pass
@@ -701,11 +714,17 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
                 else if(parse_label) {
                     // parsing quoted label ('' or ""), so blindly add next char to label
                     if(parse_label_single || parse_label_double) {
-                        if((pass == 1) && store_labels) { str_buf[str_buf_i++] = buf[i]; }
-                        if(buf[i] == '\'' && parse_label_single) {
-                            parse_label = false; parse_label_single = false;
-                        } else if(buf[i] == '"' && parse_label_double) {
-                            parse_label = false; parse_label_double = false;
+                        if(parse_label_quote_pending) {
+                            if((parse_label_single && (buf[i] == '\'')) || (parse_label_double && (buf[i] == '"'))) {
+                                if((pass == 1) && store_labels) { str_buf[str_buf_i++] = buf[i]; }
+                                parse_label_quote_pending = false;
+                            } else {
+                                parse_label = false; parse_label_single = false; parse_label_double = false; parse_label_quote_pending = false; --i;
+                            }
+                        } else if((parse_label_single && (buf[i] == '\'')) || (parse_label_double && (buf[i] == '"'))) {
+                            parse_label_quote_pending = true;
+                        } else {
+                            if((pass == 1) && store_labels) { str_buf[str_buf_i++] = buf[i]; }
                         }
                     }
 
@@ -816,12 +835,12 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
                         // about to parse a node label in single quotes ('')
                         case '\'': 
                             if(store_labels) { str_buf_i = 0; }
-                            parse_label = true; parse_label_single = true; break;
+                            parse_label_quote_pending = false; parse_label = true; parse_label_single = true; break;
 
                         // about to parse a node label in double quotes ("")
                         case '"':
                             if(store_labels) { str_buf_i = 0; }
-                            parse_label = true; parse_label_double = true; break;
+                            parse_label_quote_pending = false; parse_label = true; parse_label_double = true; break;
 
                         // about to start a node label without quotes
                         default:
