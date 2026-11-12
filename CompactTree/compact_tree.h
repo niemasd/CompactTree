@@ -731,6 +731,8 @@ compact_tree::compact_tree(const char* const input, bool is_fn, bool store_label
                         switch(buf[i]) {
                             case ':': case ',': case ')': case ';':
                                 parse_label = false; --i; break; // finished label, so need to re-read this character
+                            case '[':
+                                parse_comment = true; break;
                             default:
                                 if((pass == 1) && store_labels) { str_buf.push_back(buf[i]); }; break;
                         }
