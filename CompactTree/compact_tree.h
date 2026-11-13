@@ -51,11 +51,6 @@ const CT_NODE_T NULL_NODE = std::numeric_limits<CT_NODE_T>::max();
 const CT_LENGTH_T ZERO_LENGTH = (CT_LENGTH_T)0.;
 const CT_LENGTH_T ZERO_THRESH = (CT_LENGTH_T)0.000001;
 
-// error messages
-const std::string ERROR_OPENING_FILE = "Error opening file";
-const std::string ERROR_INVALID_NEWICK_FILE = "Invalid Newick file";
-const std::string ERROR_INVALID_NEWICK_STRING = "Invalid Newick string";
-
 // compact_tree class
 class compact_tree {
     private:
@@ -624,7 +619,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
     if(is_fn) {
         fd = open(input, O_RDONLY);
         if(fd == -1) {
-            throw std::invalid_argument(ERROR_OPENING_FILE + std::string(": ") + std::string(input));
+            throw std::invalid_argument("Error opening file" + std::string(": ") + std::string(input));
         }
         posix_fadvise(fd, 0, 0, 1); // FDADVICE_SEQUENTIAL
     }
@@ -681,7 +676,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
 
             // handle done reading (!bytes_read) and read failed (bytes_read == -1)
             if(!bytes_read || bytes_read == (size_t)(-1)) {
-                throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
             }
 
             // iterate over the characters in the buffer
@@ -759,14 +754,14 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                         // end of Newick string
                         case ';':
                             if((curr_node != ROOT_NODE) || !parse_parent.empty()) {
-                                throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                             }
                             if(pass == 0) {
                                 parse_done = true;
                                 break;
                             }
                             if((parse_node != ROOT_NODE) || (next_parse_node != num_children.size()) || (next_node != num_children.size())) {
-                                throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                             }
                             return;
 
@@ -774,7 +769,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                         case '(':
                             if(pass == 0) {
                                 if((num_children[curr_node] == (NULL_NODE - 1)) || (num_children.size() >= NULL_NODE)) {
-                                    throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                    throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                                 }
                                 ++num_children[curr_node];
                                 parse_parent.push(std::make_pair(curr_node,curr_node));
@@ -782,7 +777,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                                 curr_node = num_children.size() - 1;
                             } else {
                                 if((parse_node >= num_children.size()) || (num_children[parse_node] == 0) || (next_node > num_children.size()) || ((size_t)num_children[parse_node] > (num_children.size() - next_node)) || (next_parse_node >= num_children.size())) {
-                                    throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                    throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                                 }
                                 first_child[curr_node] = (CT_NODE_T)next_node;
                                 last_child[curr_node] = (CT_NODE_T)(next_node + num_children[parse_node] - 1);
@@ -797,7 +792,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                         // go to parent
                         case ')':
                             if(parse_parent.empty() || ((pass == 1) && (curr_node != last_child[parse_parent.top().first]))) {
-                                throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                             }
                             curr_node = parse_parent.top().first;
                             parse_node = parse_parent.top().second;
@@ -807,18 +802,18 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                         // go to new sibling
                         case ',':
                             if(parse_parent.empty()) {
-                                throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                             }
                             if(pass == 0) {
                                 if((num_children[parse_parent.top().first] == (NULL_NODE - 1)) || (num_children.size() >= NULL_NODE)) {
-                                    throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                    throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                                 }
                                 ++num_children[parse_parent.top().first];
                                 num_children.emplace_back(0);
                                 curr_node = num_children.size() - 1;
                             } else {
                                 if((curr_node >= last_child[parse_parent.top().first]) || (next_parse_node >= num_children.size())) {
-                                    throw std::invalid_argument((is_fn ? ERROR_INVALID_NEWICK_FILE : ERROR_INVALID_NEWICK_STRING) + std::string(": ") + std::string(input));
+                                    throw std::invalid_argument((is_fn ? "Invalid Newick file" : "Invalid Newick string") + std::string(": ") + std::string(input));
                                 }
                                 ++curr_node;
                                 parent[curr_node] = (CT_NODE_T)parse_parent.top().first;
@@ -856,7 +851,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
         if(pass == 0) {
             if(is_fn) {
                 if(lseek(fd, 0, SEEK_SET) == (off_t)-1) {
-                    throw std::invalid_argument(ERROR_INVALID_NEWICK_FILE + std::string(": ") + std::string(input));
+                    throw std::invalid_argument("Invalid Newick file" + std::string(": ") + std::string(input));
                 }
             } else {
                 input_i = 0;
