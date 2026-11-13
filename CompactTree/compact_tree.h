@@ -747,8 +747,13 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                 // all other symbols
                 else {
                     switch(buf[i]) {
-                        // ignore spaces outside of labels
+                        // ignore whitespace outside of labels
                         case ' ':
+                        case '\t':
+                        case '\n':
+                        case '\r':
+                        case '\f':
+                        case '\v':
                             break;
 
                         // end of Newick string
