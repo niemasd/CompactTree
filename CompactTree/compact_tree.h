@@ -286,7 +286,7 @@ class compact_tree {
                 preorder_iterator operator++(int) { preorder_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const preorder_iterator & rhs) const { return node == rhs.node; }
                 bool operator!=(const preorder_iterator & rhs) const { return node != rhs.node; }
-                CT_NODE_T operator*() { return node; }
+                CT_NODE_T operator*() const { return node; }
         };
 
         /**
@@ -317,7 +317,7 @@ class compact_tree {
                 postorder_iterator operator++(int) { postorder_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const postorder_iterator & rhs) const { return node == rhs.node; }
                 bool operator!=(const postorder_iterator & rhs) const { return node != rhs.node; }
-                CT_NODE_T operator*() { return node; }
+                CT_NODE_T operator*() const { return node; }
         };
         /**
          * Return an iterator referring to the first node of a post-order traversal
@@ -350,7 +350,7 @@ class compact_tree {
                 levelorder_iterator operator++(int) { levelorder_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const levelorder_iterator & rhs) const { return q == rhs.q; }
                 bool operator!=(const levelorder_iterator & rhs) const { return q != rhs.q; }
-                CT_NODE_T operator*() { return q.front(); }
+                CT_NODE_T operator*() const { return q.front(); }
         };
 
         /**
@@ -381,7 +381,7 @@ class compact_tree {
                 leaves_iterator operator++(int) { leaves_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const leaves_iterator & rhs) const { return node == rhs.node; }
                 bool operator!=(const leaves_iterator & rhs) const { return node != rhs.node; }
-                CT_NODE_T operator*() { return node; }
+                CT_NODE_T operator*() const { return node; }
         };
 
         /**
@@ -412,7 +412,7 @@ class compact_tree {
                 children_iterator operator++(int) { children_iterator tmp(*this); operator++(); return tmp; }
                 bool operator==(const children_iterator & rhs) const { return node == rhs.node; }
                 bool operator!=(const children_iterator & rhs) const { return node != rhs.node; }
-                CT_NODE_T operator*() { return node; }
+                CT_NODE_T operator*() const { return node; }
         };
 
         /**
