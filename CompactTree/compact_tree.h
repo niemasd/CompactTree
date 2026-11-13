@@ -10,6 +10,7 @@
 #include <cstdlib>       // std::abs, std::atof
 #include <cstring>       // strcmp()
 #include <cerrno>        // errno
+#include <deque>         // std::deque
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::ostream
 #include <iterator>      // std::iterator, std::input_iterator_tag
