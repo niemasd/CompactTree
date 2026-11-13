@@ -467,7 +467,7 @@ class compact_tree {
                 if(is_leaf(node)) { if(include_leaves) { tot += get_edge_length(node); ++count; } }
                 else { if(include_internal) { tot += get_edge_length(node); ++count; } }
             }
-            return tot / count;
+            return (count == 0) ? 0. : (tot / count);
         }
 
         /**
