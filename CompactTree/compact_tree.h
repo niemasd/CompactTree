@@ -12,6 +12,7 @@
 #include <cerrno>        // errno
 #include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
 #include <iostream>      // std::ostream
+#include <iterator>      // std::iterator, std::input_iterator_tag
 #include <limits>        // std::numeric_limits<T>::max
 #include <queue>         // std::queue
 #include <sstream>       // std::ostringstream
