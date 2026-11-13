@@ -128,21 +128,13 @@ The root of a tree does not have a parent, so `tree.get_parent(ROOT_NODE)` will 
 
 ### Children
 
-The children of `node` can be retrieved using the `compact_tree::get_children` function:
-
-```cpp
-const std::vector<CT_NODE_T> & node_children = tree.get_children(node);
-```
-
-Alternatively, the children of `node` can be iterated over using the `compact_tree::children_iterator` class via the `compact_tree::children_begin` and `compact_tree::children_end` functions:
+The children of `node` can be iterated over using the `compact_tree::children_iterator` class via the `compact_tree::children_begin` and `compact_tree::children_end` functions:
 
 ```cpp
 for(auto it = tree.children_begin(node); it != tree.children_end(node); ++it) {
     // visit `*it`, which is a `CT_NODE_T`
 }
 ```
-
-Currently, children will be visited in the order they appear in the original Newick string.
 
 #### Adding a Child
 
@@ -191,7 +183,7 @@ for(auto it = tree.preorder_begin(); it != tree.preorder_end(); ++it) {
 }
 ```
 
-The only guarantee is that a node will be visited before its children. Currently, nodes will be visited in the order they appear in the original Newick string.
+The only guarantee is that a node will be visited before its children.
 
 ### Post-Order
 
@@ -211,7 +203,7 @@ for(auto it = tree.postorder_begin(); it != tree.postorder_end(); ++it) {
 }
 ```
 
-The only guarantee is that a node will be visited before its parent. Currently, nodes will be visited in reverse of the order they appear in the original Newick string.
+The only guarantee is that a node will be visited before its parent.
 
 ### Level-Order
 
@@ -223,7 +215,7 @@ for(auto it = tree.levelorder_begin(); it != tree.levelorder_end(); ++it) {
 }
 ```
 
-The only guarantee is that nodes will be visited in increasing order of depth (i.e., number of edges from the root). Currently, nodes with the same depth will be visited in the order they appear in the original Newick string. Note that the copy constructor and the post-increment operator (`it++`) will copy the BFS queue, which is slow and uses extra memory, so avoid both when possible.
+The only guarantee is that nodes will be visited in increasing order of depth (i.e., number of edges from the root). Note that the copy constructor and the post-increment operator (`it++`) will copy the BFS queue, which is slow and uses extra memory, so avoid both when possible.
 
 ### Leaves
 
@@ -234,8 +226,6 @@ for(auto it = tree.leaves_begin(); it != tree.leaves_end(); ++it) {
     // visit `*it`, which is a `CT_NODE_T`
 }
 ```
-
-Currently, leaves will be visited in the order they appear in the original Newick string.
 
 ## Python Wrapper
 
