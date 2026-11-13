@@ -672,6 +672,8 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
     const size_t INPUT_LEN = strlen(input); size_t input_i = 0; // variables to help with reading from Newick string specifically
     char buf[IO_BUFFER_SIZE + 1]; // buffer for reading
     std::string str_buf; // helper string buffer
+    std::istringstream length_stream(str_buf); // helper istringstream for handling different locales
+    length_stream.imbue(std::locale::classic());
     if(is_fn) {
         fd = open(input, O_RDONLY);
         if(fd == -1) {
@@ -752,7 +754,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                         case ',':
                         case ')':
                         case ';':
-                            if((pass == 1) && store_lengths) { length[curr_node] = PARSE_LENGTH_FROM_C_STR(str_buf.c_str()); }
+                            if((pass == 1) && store_lengths) { length_stream.clear(); length_stream.str(str_buf); length_stream >> length[curr_node]; }
                             parse_length = false; --i; break; // need to re-read this character
 
                         // edge comment (ignore for now)
