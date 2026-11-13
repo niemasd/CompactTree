@@ -277,6 +277,8 @@ class compact_tree {
             private:
                 CT_NODE_T node;
             public:
+                typedef CT_NODE_T reference;
+                typedef void pointer;
                 preorder_iterator(CT_NODE_T x) : node(x) {}
                 preorder_iterator(const preorder_iterator & it) : node(it.node) {}
                 preorder_iterator & operator=(const preorder_iterator & it) { node = it.node; return *this; }
@@ -306,6 +308,8 @@ class compact_tree {
             private:
                 CT_NODE_T node;
             public:
+                typedef CT_NODE_T reference;
+                typedef void pointer;
                 postorder_iterator(CT_NODE_T x) : node(x) {}
                 postorder_iterator(const postorder_iterator & it) : node(it.node) {}
                 postorder_iterator & operator=(const postorder_iterator & it) { node = it.node; return *this; }
@@ -335,6 +339,8 @@ class compact_tree {
             private:
                 std::queue<CT_NODE_T> q; compact_tree* tree_ptr;
             public:
+                typedef CT_NODE_T reference;
+                typedef void pointer;
                 levelorder_iterator(compact_tree* const tp) : tree_ptr(tp) {}
                 levelorder_iterator(const CT_NODE_T root, compact_tree* const tp) : tree_ptr(tp) { q.push(root); }
                 levelorder_iterator(std::queue<CT_NODE_T> x, compact_tree* const tp) : q(x), tree_ptr(tp) {}
@@ -366,6 +372,8 @@ class compact_tree {
             private:
                 CT_NODE_T node; const compact_tree* tree_ptr;
             public:
+                typedef CT_NODE_T reference;
+                typedef void pointer;
                 leaves_iterator(CT_NODE_T x, const compact_tree* const tp) : node(x), tree_ptr(tp) {}
                 leaves_iterator(const leaves_iterator & it) : node(it.node), tree_ptr(it.tree_ptr) {}
                 leaves_iterator & operator=(const leaves_iterator & it) { node = it.node; tree_ptr = it.tree_ptr; return *this; }
@@ -395,6 +403,8 @@ class compact_tree {
             private:
                 CT_NODE_T node;
             public:
+                typedef CT_NODE_T reference;
+                typedef void pointer;
                 children_iterator(CT_NODE_T x) : node(x) {}
                 children_iterator(const children_iterator & o) : node(o.node) {}
                 children_iterator & operator=(const children_iterator & o) { node = o.node; return *this; }
