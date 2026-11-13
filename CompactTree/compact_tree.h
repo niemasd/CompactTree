@@ -46,10 +46,10 @@
 // general constants
 #define COMPACTTREE_VERSION "1.1.0"
 #define IO_BUFFER_SIZE 16384
-const CT_NODE_T ROOT_NODE = (CT_NODE_T)0;
-const CT_NODE_T NULL_NODE = std::numeric_limits<CT_NODE_T>::max();
-const CT_LENGTH_T ZERO_LENGTH = (CT_LENGTH_T)0.;
-const CT_LENGTH_T ZERO_THRESH = (CT_LENGTH_T)0.000001;
+#define ROOT_NODE ((CT_NODE_T)0)
+#define NULL_NODE (std::numeric_limits<CT_NODE_T>::max())
+#define ZERO_LENGTH ((CT_LENGTH_T)0.)
+#define ZERO_THRESH ((CT_LENGTH_T)0.000001)
 
 // compact_tree class
 class compact_tree {
