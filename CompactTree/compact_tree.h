@@ -14,6 +14,7 @@
 #include <iostream>      // std::ostream
 #include <iterator>      // std::iterator, std::input_iterator_tag
 #include <limits>        // std::numeric_limits<T>::max
+#include <memory>        // std::unique_ptr
 #include <queue>         // std::queue
 #include <sstream>       // std::ostringstream
 #include <stack>         // std::stack
@@ -543,7 +544,7 @@ inline std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tr
     const size_t NUM_NODES = get_num_nodes(); const size_t N = get_num_leaves(); const size_t N_MINUS_1 = N - 1;
     const size_t N_CHOOSE_2 = ((N%2) == 0) ? ((N/2) * N_MINUS_1) : ((N_MINUS_1/2) * N);
     std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> dm; dm.reserve(N_CHOOSE_2);
-    std::unordered_map<CT_NODE_T, std::unordered_map<CT_NODE_T, double>*> leaf_dists;
+    std::unordered_map<CT_NODE_T, std::unique_ptr<std::unordered_map<CT_NODE_T, double>>> leaf_dists;
     CT_NODE_T ch_it; CT_NODE_T ch_it_2;
     CT_NODE_T curr; CT_NODE_T child; CT_NODE_T child_2; std::unordered_map<CT_NODE_T, double>* curr_leaf_dists;
     std::unordered_map<CT_NODE_T, double>* child_leaf_dists; std::unordered_map<CT_NODE_T, double>::iterator dist_it; std::unordered_map<CT_NODE_T, double>::iterator dist_it_end;
@@ -551,8 +552,7 @@ inline std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tr
 
     // calculate pairwise distances
     for(curr = NUM_NODES-1; curr != NULL_NODE; --curr) {
-        curr_leaf_dists = new std::unordered_map<CT_NODE_T, double>();
-        leaf_dists.emplace(curr, curr_leaf_dists);
+        curr_leaf_dists = leaf_dists.emplace(curr, std::unique_ptr<std::unordered_map<CT_NODE_T, double>>(new std::unordered_map<CT_NODE_T, double>())).first->second.get();
 
         // for leaves, they have 0 distance to themselves
         if(is_leaf(curr)) {
@@ -563,9 +563,9 @@ inline std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tr
         else {
             // calculate all pairwise distances between leaves below this node
             for(ch_it = first_child[curr]; ch_it < last_child[curr]; ++ch_it) {
-                child = ch_it; child_leaf_dists = leaf_dists[child];
+                child = ch_it; child_leaf_dists = leaf_dists[child].get();
                 for(ch_it_2 = ch_it+1; ch_it_2 <= last_child[curr]; ++ch_it_2) {
-                    child_2 = ch_it_2; child_leaf_dists_2 = leaf_dists[child_2];
+                    child_2 = ch_it_2; child_leaf_dists_2 = leaf_dists[child_2].get();
                     for(dist_it = child_leaf_dists->begin(), dist_it_end = child_leaf_dists->end(); dist_it != dist_it_end; ++dist_it) {
                         for(dist_it_2 = child_leaf_dists_2->begin(), dist_it_2_end = child_leaf_dists_2->end(); dist_it_2 != dist_it_2_end; ++dist_it_2) {
                             dm.emplace_back(std::make_pair(std::make_pair(dist_it->first,dist_it_2->first), dist_it->second + dist_it_2->second + get_edge_length(child) + get_edge_length(child_2)));
@@ -576,15 +576,15 @@ inline std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tr
 
             // calculate leaf distances to this node
             for(ch_it = first_child[curr]; ch_it <= last_child[curr]; ++ch_it) {
-                child = ch_it; child_leaf_dists = leaf_dists[child];
+                child = ch_it; child_leaf_dists = leaf_dists[child].get();
                 for(dist_it = child_leaf_dists->begin(), dist_it_end = child_leaf_dists->end(); dist_it != dist_it_end; ++dist_it) {
                     curr_leaf_dists->emplace(dist_it->first, dist_it->second + get_edge_length(child));
                 }
-                delete child_leaf_dists;
+                leaf_dists[child].reset();
             }
         }
     }
-    delete leaf_dists[ROOT_NODE]; return dm;
+    return dm;
 }
 
 // extract a subtree
