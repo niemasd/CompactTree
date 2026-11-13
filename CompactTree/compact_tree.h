@@ -46,7 +46,6 @@
 // general constants
 #define COMPACTTREE_VERSION "1.1.0"
 #define IO_BUFFER_SIZE 16384
-const std::string EMPTY_STRING = "";
 const CT_NODE_T ROOT_NODE = (CT_NODE_T)0;
 const CT_NODE_T NULL_NODE = std::numeric_limits<CT_NODE_T>::max();
 const CT_LENGTH_T ZERO_LENGTH = (CT_LENGTH_T)0.;
@@ -235,7 +234,7 @@ class compact_tree {
          * @param node The node to get the label of
          * @return The label of `node`
          */
-        const std::string & get_label(CT_NODE_T node) const { return has_labels() ? label[node] : EMPTY_STRING; }
+        const std::string & get_label(CT_NODE_T node) const { if(has_labels()) { return label[node]; } else { static const std::string empty_string; return empty_string; } }
 
         /**
          * Set the label of a node
@@ -588,7 +587,7 @@ inline compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
     bool has_lengths = (length.size() != 0); bool has_labels = (label.size() != 0);
     new_tree.parent.emplace_back(NULL_NODE); new_tree.first_child.emplace_back(NULL_NODE); new_tree.last_child.emplace_back(NULL_NODE);
     if(has_lengths) { new_tree.length.emplace_back(ZERO_LENGTH); }
-    if(has_labels) { new_tree.label.emplace_back(EMPTY_STRING); }
+    if(has_labels) { new_tree.label.emplace_back(""); }
     std::pair<CT_NODE_T, CT_NODE_T> curr;
     while(!to_copy.empty()) {
         curr = to_copy.top(); to_copy.pop();
@@ -601,7 +600,7 @@ inline compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
                 CT_NODE_T new_child = (CT_NODE_T)new_tree.parent.size();
                 new_tree.parent.emplace_back(curr.second); new_tree.first_child.emplace_back(NULL_NODE); new_tree.last_child.emplace_back(NULL_NODE);
                 if(has_lengths) { new_tree.length.emplace_back(ZERO_LENGTH); }
-                if(has_labels) { new_tree.label.emplace_back(EMPTY_STRING); }
+                if(has_labels) { new_tree.label.emplace_back(""); }
                 to_copy.push(std::make_pair(child,new_child));
             }
         }
@@ -655,7 +654,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
             first_child.resize(num_children.size(), NULL_NODE);
             last_child.resize(num_children.size(), NULL_NODE);
             if(store_lengths) { length.resize(num_children.size(), ZERO_LENGTH); }
-            if(store_labels) { label.resize(num_children.size(), EMPTY_STRING); }
+            if(store_labels) { label.resize(num_children.size(), ""); }
         }
 
         // read Newick tree byte-by-byte
