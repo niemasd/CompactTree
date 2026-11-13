@@ -14,6 +14,7 @@
 #include <iostream>      // std::ostream
 #include <iterator>      // std::iterator, std::input_iterator_tag
 #include <limits>        // std::numeric_limits<T>::max
+#include <locale>        // std::locale
 #include <memory>        // std::unique_ptr
 #include <queue>         // std::queue
 #include <sstream>       // std::ostringstream
@@ -505,8 +506,9 @@ inline void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool 
         std::ostream & out;
         std::streamsize old_precision;
         std::ios_base::fmtflags old_floatfield;
-        precision_guard(std::ostream & stream) : out(stream), old_precision(stream.precision()), old_floatfield(stream.flags() & std::ios_base::floatfield) { out.unsetf(std::ios_base::floatfield); out.precision(std::numeric_limits<CT_LENGTH_T>::max_digits10); }
-        ~precision_guard() { out.precision(old_precision); out.setf(old_floatfield, std::ios_base::floatfield); }
+        std::locale old_locale;
+        precision_guard(std::ostream & stream) : out(stream), old_precision(stream.precision()), old_floatfield(stream.flags() & std::ios_base::floatfield), old_locale(stream.getloc()) { out.unsetf(std::ios_base::floatfield); out.precision(std::numeric_limits<CT_LENGTH_T>::max_digits10); out.imbue(std::locale::classic()); }
+        ~precision_guard() { out.precision(old_precision); out.setf(old_floatfield, std::ios_base::floatfield); out.imbue(old_locale); }
     } guard(out);
 
     // set things up
