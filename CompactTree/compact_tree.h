@@ -493,7 +493,7 @@ class compact_tree {
 };
 
 // print Newick string (currently recursive)
-void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool include_semicolon) {
+inline void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool include_semicolon) {
     if(!is_leaf(node)) { for(CT_NODE_T child = first_child[node]; child <= last_child[node]; ++child) { out << ((child == first_child[node]) ? '(' : ','); print_newick(out, child, false); } out << ')'; }
     if(label.size() != 0) {
        const std::string & curr_label = label[node];
@@ -513,7 +513,7 @@ void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool include
 }
 
 // find the MRCA of nodes
-CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) const {
+inline CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) const {
     std::queue<CT_NODE_T, std::deque<CT_NODE_T>> to_visit(std::deque<CT_NODE_T>(nodes.begin(), nodes.end()));
     std::unordered_map<CT_NODE_T, CT_NODE_T> count; std::unordered_map<CT_NODE_T, CT_NODE_T>::iterator count_it;
     CT_NODE_T curr_node; CT_NODE_T curr_parent; size_t total = nodes.size();
@@ -533,7 +533,7 @@ CT_NODE_T compact_tree::find_mrca(const std::unordered_set<CT_NODE_T> & nodes) c
 }
 
 // calculate distance matrix
-std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tree::calc_distance_matrix() {
+inline std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tree::calc_distance_matrix() {
     // set things up
     const size_t NUM_NODES = get_num_nodes(); const size_t N = get_num_leaves(); const size_t N_MINUS_1 = N - 1;
     const size_t N_CHOOSE_2 = ((N%2) == 0) ? ((N/2) * N_MINUS_1) : ((N_MINUS_1/2) * N);
@@ -583,7 +583,7 @@ std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> compact_tree::cal
 }
 
 // extract a subtree
-compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
+inline compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
     compact_tree new_tree; std::stack<std::pair<CT_NODE_T, CT_NODE_T>> to_copy; to_copy.push(std::make_pair(node,0)); // first = old tree; second = new tree
     bool has_lengths = (length.size() != 0); bool has_labels = (label.size() != 0);
     new_tree.parent.emplace_back(NULL_NODE); new_tree.first_child.emplace_back(NULL_NODE); new_tree.last_child.emplace_back(NULL_NODE);
@@ -610,7 +610,7 @@ compact_tree compact_tree::extract_subtree(CT_NODE_T node) {
 }
 
 // compact_tree constructor (putting it last because it's super long)
-compact_tree::compact_tree(const char* const input, bool is_fn, bool store_labels, bool store_lengths, size_t reserve) {
+inline compact_tree::compact_tree(const char* const input, bool is_fn, bool store_labels, bool store_lengths, size_t reserve) {
     // reserve space up-front (if given `reserve`) to reduce resizing (save time)
     std::vector<CT_NODE_T> num_children;
     if(reserve != 0) { parent.reserve(reserve); first_child.reserve(reserve); last_child.reserve(reserve); num_children.reserve(reserve); if(store_lengths) { length.reserve(reserve); } if(store_labels) { label.reserve(reserve); } }
