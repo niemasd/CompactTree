@@ -11,7 +11,7 @@
 #include <cstring>       // strcmp()
 #include <cerrno>        // errno
 #include <deque>         // std::deque
-#include <fcntl.h>       // O_RDONLY, open(), posix_fadvise()
+#include <fcntl.h>       // O_RDONLY, open(), POSIX_FADV_SEQUENTIAL, posix_fadvise()
 #include <iostream>      // std::ostream
 #include <iterator>      // std::iterator, std::input_iterator_tag
 #include <limits>        // std::numeric_limits<T>::max
@@ -680,7 +680,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
         if(fd == -1) {
             throw std::invalid_argument("Error opening file" + std::string(": ") + std::string(input));
         }
-        posix_fadvise(fd, 0, 0, 1); // FDADVICE_SEQUENTIAL
+        posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
     }
 
     // parse the Newick string twice: first to count children, then to create the tree
