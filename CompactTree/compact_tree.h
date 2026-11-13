@@ -498,23 +498,66 @@ class compact_tree {
         std::vector<std::pair<std::pair<CT_NODE_T,CT_NODE_T>, double>> calc_distance_matrix();
 };
 
-// print Newick string (currently recursive)
+// print Newick string
 inline void compact_tree::print_newick(std::ostream & out, CT_NODE_T node, bool include_semicolon) {
-    if(!is_leaf(node)) { for(CT_NODE_T child = first_child[node]; child <= last_child[node]; ++child) { out << ((child == first_child[node]) ? '(' : ','); print_newick(out, child, false); } out << ')'; }
-    if(label.size() != 0) {
-       const std::string & curr_label = label[node];
-        if(curr_label.find_first_of(" \t\n\r\f\v()[],:;'\"") != std::string::npos) {
-            out << '\'';
-            for(size_t i = 0; i < curr_label.size(); ++i) {
-                if(curr_label[i] == '\'') { out << "''"; }
-                else { out << curr_label[i]; }
+    // preserve output stream precision and floating-point formatting
+    struct precision_guard {
+        std::ostream & out;
+        std::streamsize old_precision;
+        std::ios_base::fmtflags old_floatfield;
+        precision_guard(std::ostream & stream) : out(stream), old_precision(stream.precision()), old_floatfield(stream.flags() & std::ios_base::floatfield) { out.unsetf(std::ios_base::floatfield); out.precision(std::numeric_limits<CT_LENGTH_T>::max_digits10); }
+        ~precision_guard() { out.precision(old_precision); out.setf(old_floatfield, std::ios_base::floatfield); }
+    } guard(out);
+
+    // set things up
+    std::stack<std::pair<CT_NODE_T, CT_NODE_T>> to_visit;
+    CT_NODE_T curr; CT_NODE_T child;
+    if(!is_leaf(node)) { out << '('; }
+    to_visit.push(std::make_pair(node, first_child[node]));
+
+    // traverse the tree
+    while(!to_visit.empty()) {
+        curr = to_visit.top().first;
+
+        // still have children to visit
+        if(!is_leaf(curr) && (to_visit.top().second <= last_child[curr])) {
+            child = to_visit.top().second;
+            ++(to_visit.top().second);
+
+            // print comma between children
+            if(child != first_child[curr]) { out << ','; }
+
+            // initialize child
+            if(!is_leaf(child)) { out << '('; }
+            to_visit.push(std::make_pair(child, first_child[child]));
+        }
+
+        // finished visiting all children of this node
+        else {
+            to_visit.pop();
+
+            // close parentheses for internal nodes
+            if(!is_leaf(curr)) { out << ')'; }
+
+            // print node label
+            if(label.size() != 0) {
+                const std::string & curr_label = label[curr];
+                if(curr_label.find_first_of(" \t\n\r\f\v()[],:;'\"") != std::string::npos) {
+                    out << '\'';
+                    for(size_t i = 0; i < curr_label.size(); ++i) {
+                        if(curr_label[i] == '\'') { out << "''"; }
+                        else { out << curr_label[i]; }
+                    }
+                    out << '\'';
+                } else { out << curr_label; }
             }
-            out << '\'';
-        } else {
-            out << curr_label;
+
+            // print edge length
+            if(length.size() != 0) { out << ':' << length[curr]; }
         }
     }
-    if(length.size() != 0) { out << ':' << length[node]; }
+
+    // print terminating semicolon
     if(include_semicolon) { out << ';'; }
 }
 
