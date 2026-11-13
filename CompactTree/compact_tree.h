@@ -670,7 +670,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
     int fd = -1;
     struct fd_guard { int* fd; ~fd_guard() { if(*fd != -1) { close(*fd); } } } close_fd{&fd};
     size_t bytes_read = 0; size_t i; // variables to help with reading
-    const size_t INPUT_LEN = strlen(input); size_t input_i = 0; // variables to help with reading from Newick string specifically
+    const size_t INPUT_LEN = std::strlen(input); size_t input_i = 0; // variables to help with reading from Newick string specifically
     char buf[IO_BUFFER_SIZE + 1]; // buffer for reading
     std::string str_buf; // helper string buffer
     std::istringstream length_stream(str_buf); // helper istringstream for handling different locales
@@ -729,7 +729,7 @@ inline compact_tree::compact_tree(const char* const input, bool is_fn, bool stor
                     } else { // fewer than IO_BUFFER_SIZE bytes left in Newick string (input)
                         bytes_read = INPUT_LEN - input_i;
                     }
-                    memcpy(buf, input+input_i, bytes_read); input_i += bytes_read;
+                    std::memcpy(buf, input+input_i, bytes_read); input_i += bytes_read;
                 }
             }
 
